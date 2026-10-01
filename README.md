@@ -8,7 +8,7 @@ An original SNES-inspired 2D bomb arena built with Babylon Lite and authoritativ
 
 ## Current status
 
-Foundation is complete. Multiplayer Setup is being verified: private rooms, readiness, colors, authoritative battles, local prediction, remote interpolation and reconnect handling are implemented. Complete first-to-three matches, power-ups, sudden death, rematches, audio and final public delivery remain in Gameplay Polish. This is not yet the completed game.
+Foundation and Multiplayer Setup are complete and archived after public two-browser verification. Private rooms, readiness, colors, authoritative battles, local prediction, remote interpolation and reconnect handling are playable in the [multiplayer milestone preview](https://samuelasherrivello.github.io/babylon-lite-bomberman-clone/?mode=online). Complete first-to-three matches, power-ups, sudden death, rematches, audio and final public delivery remain in Gameplay Polish. This is not yet the completed game.
 
 ## Getting Started
 

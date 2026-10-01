@@ -22,8 +22,8 @@
 
 ## 4. Public milestone acceptance
 
-- [ ] 4.1 Deploy client through existing Pages workflow and verify two public browsers joining a code, readying, fighting, completing a round and recovering a brief disconnect.
-- [ ] 4.2 Validate all milestone specs and record latency/jitter, mobile and runtime evidence; verify no failed regression checks or unreported hosting limits.
+- [x] 4.1 Deploy client through existing Pages workflow and verify two public browsers joining a code, readying, fighting, completing a round and recovering a brief disconnect.
+- [x] 4.2 Validate all milestone specs and record latency/jitter, mobile and runtime evidence; verify no failed regression checks or unreported hosting limits.
 
 After all implementation and acceptance tasks pass: sync/archive, scoped commit/push, then explore and propose Gameplay Polish. Its complete first-to-three match/rematch, progression, assets/audio and public release acceptance remain mandatory.
 
