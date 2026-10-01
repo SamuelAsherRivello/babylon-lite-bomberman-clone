@@ -1,26 +1,91 @@
 # AI Repository Guidance
 
-## Template use workflow
+## Confirmed project overrides
 
-If user directs you to use this template, then follow these steps:
+This is the existing Bomberman Clone game, not a new template creation.
+Retain `project-name/` and its history. Choose landscape only. The user's
+original brief explicitly requires original arcade music as well as effects,
+mute and volume; that requirement overrides the template's recommendation
+against music. The user requires the latest stable OpenSpec CLI; retain the
+verified 1.14.0 generated skills instead of the template's older 1.13.1 pin.
+Template improvements reconciled from revision
+`6a6b7d1b6da77c36b76344c38d110ff56b6db889` after checkpoint `88b39a5`.
 
-1. Determine the reuse mode from the request. For a new GitHub repository,
-   use GitHub's **Use this template** flow when authorized. For a local project,
-   create an authorized copy in its explicitly named destination. When the user
-   says to use this repository only as inspiration, inspect it as a reference
-   and copy no files unless they request that.
-2. Read this file, then read
-   `AGENTS_TEMPLATE_USAGE_CHECKLIST.md` before adding a stack or changing
-   project files.
-3. Confirm the project's purpose, target platforms, selected stack, deployment
-   target, dependency policy, and whether an OpenSpec workflow is required. Ask
-   only for an input that is material and not provided or discoverable.
-4. Keep `project-name/` as the Vite application root and keep the GitHub
-   repository URL synchronized with the project repository. The repository root
-   remains the npm project root.
-5. Inspect the resulting project's actual configuration before documenting or
-   running setup, test, build, deployment, or release commands. Complete the
-   checklist's delivery gate before presenting the project as ready.
+## Repository purpose and scope
+
+This repository is a reusable browser app/game template. When a user asks to
+use it, first identify the requested mode:
+
+1. **New GitHub repository:** Use GitHub's **Use this template** flow when
+   authorized. The destination repository is a new project; do not push
+   project-specific work to this template.
+2. **Local project copy:** Copy the tracked template files into the explicitly
+   named destination, excluding `.git` and its history. Do not create a
+   destination the user did not identify.
+3. **Reference only:** Inspect this repository as inspiration. Copy no files
+   unless the user separately asks for a copy.
+
+For either new-project mode, follow
+[the template usage checklist](AGENTS_TEMPLATE_USAGE_CHECKLIST.md). Resolve
+any mismatch between the requested mode and repository configuration before
+copying or creating a destination. Do not treat reference-only use as permission
+to copy.
+
+When establishing a new project, determine whether the user wants a game or an
+app. For a game, keep the Babylon content and dependencies as the starting
+point and adapt them to the requested game. For an app, remove Babylon content
+and dependencies, along with associated imports, tests, assets, and docs used
+only by that content; update the lockfile after dependency changes.
+
+For every new app or game concept, choose either portrait or landscape before
+implementation. Use the template's corresponding viewport display for the
+chosen orientation and remove the template's orientation toggle, shortcut,
+and persisted override. Do not add a second orientation or a layout that
+attempts to serve both orientations. Do not select square for a new app or
+game concept.
+
+When adapting the starter into a game, treat the Babylon showcase as a renderer
+example and replace it with the requested game. Babylon Lite is WebGPU-only;
+games using it must show a clear unsupported-browser message and must not add a
+fallback renderer. Implement the scene and renderer setup required by the game,
+including for 3D. Every 2D game uses the Pixel Perfect rendering policy, while
+each game chooses its own logical resolution and render scale.
+
+The viewport is the priority location for primary game content and must remain
+usable in windowed and fullscreen modes. The template gutter layout is
+required, but adding secondary material there (such as design elements,
+instructions, or backstory) is optional. Games have full freedom to choose
+whether and how their content scrolls.
+
+Game audio is optional; music is not recommended. If a game includes sound,
+recommend 4 to 10 event-based sound effects and provide both an in-game mute
+toggle and a documented URL argument that mutes all sound for silent AI
+testing. Human players may enable sound in the normal experience.
+
+## Repository and application layout
+
+- The repository root is the npm project root and contains `.git`, package
+  configuration, and repository metadata. Run Git, dependency, build, test,
+  and run commands from this root unless the resulting project's inspected
+  configuration says otherwise.
+- `project-name/` is the Vite application root. Keep app source, tests, and
+  assets there unless the chosen stack deliberately changes the layout.
+- Project documentation assets belong in `project-name/documentation/`.
+- Keep `project-name/` as the Vite root and synchronize the GitHub repository
+  URL with the resulting project repository when this template baseline is
+  retained.
+
+## React code and styles
+
+- Do not leave dead code or dead styles. Remove unused React components,
+  imports, variables, CSS selectors, and custom properties when they are no
+  longer used.
+- When changing React UI, check that its JSX class names and IDs match the
+  styles, and remove obsolete selectors left behind by the change.
+- The page structure supports keeping the full HUD visible inside the viewport
+  during fullscreen. Gutters are not visible in fullscreen, so custom gutter UI
+  may be added only as secondary UI. Keep all primary UI in React and within
+  the viewport.
 
 ## HTML template corner roles
 
@@ -32,39 +97,19 @@ The default HTML template uses four reusable `corner` instances inside
 - Lower right: project version.
 - Lower left: project settings.
 
+Format content in each corner using either the menu title style or the menu
+body style. Represent boolean settings with checkboxes.
+
+## OpenSpec setup
+
+The template preserves `.agents/skills/.openspec-target` but does not bundle
+generated OpenSpec skills. When the resulting project requires OpenSpec, follow
+the authoritative setup and verification procedure in
+[the template usage checklist](AGENTS_TEMPLATE_USAGE_CHECKLIST.md#openspec-setup-when-required).
+Do not hand-edit generated OpenSpec skills.
+
 ## Pull request workflow
 
-- Do not create pull requests for any workflow unless the user explicitly asks
-  for a pull request in the current request.
-- Pushing a branch, committing changes, or completing an OpenSpec/template
-  workflow is not implicit approval to open a pull request.
-
-## Working directories
-
-- **Repository root** is the npm project root. It contains `.git`, repository
-  metadata, and package configuration. Project documentation assets live in
-  `project-name/documentation/`. Run Git,
-  dependency, build, test, and run commands there.
-- **Application root** is `project-name/`. It contains the Vite entry page,
-  source, tests, assets, and build output. Keep application implementation
-  there unless the selected stack deliberately changes the layout.
-
-Correct: run `git status`, dependency, build, test, and run commands from the
-repository root; keep the application's source and tests under
-`project-name/`.
-
-## OpenSpec skill discovery
-
-- Codex uses repository-local OpenSpec skills from `.agents/skills/`. Invoke
-  them with `$openspec-*`; slash commands such as `/opsx...` are not Codex
-  skill names.
-- This template preserves `.agents/skills/.openspec-target` but does not bundle skills. Generate repository-local skills in the resulting project when its OpenSpec workflow is required.
-- Use the latest stable `@fission-ai/openspec` CLI available when setting up
-  the project, then run `openspec doctor --json` from the repository root.
-  Install or update it using the official installation guide if needed.
-- Confirm each generated skill folder matches its `name:` frontmatter and each
-  `metadata.generatedBy` value matches the CLI version. Do not hand-edit
-  generated OpenSpec skill files.
-- Reopen Codex at the resulting repository root after skills are generated or
-  refreshed so repository-local `$openspec-*` autocomplete is indexed for the
-  new workspace.
+Do not create a pull request unless the user explicitly asks for one in the
+current request. A push, commit, or completed template/OpenSpec workflow does
+not imply approval to create a pull request.

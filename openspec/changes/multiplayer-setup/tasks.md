@@ -10,15 +10,15 @@
 
 ## 2. Server release
 
-- [ ] 2.1 Commit/push scoped server changes, invoke existing release/deploy workflow and verify release asset, canonical health version and live Bomberman two-client actions.
-- [ ] 2.2 Record hosting-duration evidence and recovery limitations, verify requested game rules are unchanged, and resolve any actual deployment failure without claiming preserved state after host reset.
+- [x] 2.1 Commit/push scoped server changes, invoke existing release/deploy workflow and verify release asset, canonical health version and live Bomberman two-client actions.
+- [x] 2.2 Record hosting-duration evidence and recovery limitations, verify requested game rules are unchanged, and resolve any actual deployment failure without claiming preserved state after host reset.
 
 ## 3. Game client
 
-- [ ] 3.1 Pin verified release tarball and production endpoint, integrate shared lifecycle with create/join/ready/color/retry UI; verify two-browser lobby, errors and capacity.
-- [ ] 3.2 Add sequenced input, local prediction/reconciliation, remote interpolation, pending bomb visuals and server-time fuse presentation; verify responsive motion and consistent outcomes under latency/jitter.
-- [ ] 3.3 Add spectator/round-result and reconnect UX preserving local practice; verify blur/settings neutral input, expiry recovery and clean teardown.
-- [ ] 3.4 Document multiplayer endpoint/release/controls and add meaningful synchronization checks; verify npm test/build and README claims.
+- [x] 3.1 Pin verified release tarball and production endpoint, integrate shared lifecycle with create/join/ready/color/retry UI; verify two-browser lobby, errors and capacity.
+- [x] 3.2 Add sequenced input, local prediction/reconciliation, remote interpolation, pending bomb visuals and server-time fuse presentation; verify responsive motion and consistent outcomes under latency/jitter.
+- [x] 3.3 Add spectator/round-result and reconnect UX preserving local practice; verify blur/settings neutral input, expiry recovery and clean teardown.
+- [x] 3.4 Document multiplayer endpoint/release/controls and add meaningful synchronization checks; verify npm test/build and README claims.
 
 ## 4. Public milestone acceptance
 

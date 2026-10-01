@@ -1,43 +1,76 @@
 # 2DPixelPerfect presentation
 
-The game uses Babylon Lite 1.32.0 native SpriteRenderer on WebGPU. All textures
-are original code-authored 16×16 pixel frames in `src/content/renderer.js`;
-there are no imported copyrighted game assets. The small canvas in that file
-authors a PNG atlas only; Babylon Lite renders every arena frame.
+Babylon Lite 1.32.0 native SpriteRenderer renders the arena with WebGPU only.
+Original code-authored 16×16 pixel textures live in src/content/renderer.js.
+The temporary authoring canvas produces the PNG atlas; it is not a fallback
+game renderer.
 
-The current logical stage is **320×272**. The 15×13 arena occupies 240×208,
-offset 40 pixels horizontally and 32 vertically. A 320×240 stage leaves only
-16 pixels above/below; 272 gives 32 for HUD/frame clearance while retaining
-one logical-to-CSS pixel per pixel on 390px-wide mobile screens. Direct
-240×208 arena framing leaves no internal border. Desktop 1280×900 and mobile
-390×844 browser screenshots show the selected whole-arena presentation.
+## Resolution and layout
 
-The chosen game orientation is landscape. Portrait phones retain the complete
-landscape stage through centered letterboxing, with touch controls below the
-arena. There is no portrait/landscape setting: viewport resizing is automatic.
+The chosen orientation is **landscape**, with a fixed **320:272 viewport ratio**.
+The same landscape rectangle is centered in desktop and portrait browser
+windows. Four residual gutters occupy the outside space. All primary React
+UI, including the four template corners, lives inside ui_layer and remains
+available in fullscreen. There is no orientation selector or saved override.
 
-Integer CSS scale is floor(min(availableWidth/320, availableHeight/272)).
-When that is zero the positive fractional fit is used. The stage is centered
-without stretching. Babylon Lite renders directly to its native DPR-aware
-backing buffer; there is no reduced intermediate render target. Logical
-positions/sizes map through CSS scale and DPR once into backing coordinates.
-The engine owns canvas.width/height, so application code never sets them.
-React HUD and controls stay at CSS resolution independently of the game.
+The logical rendered arena is **240×208**, derived from 15×13 tiles at 16px.
+The canvas has its own CSS region between the HUD and controls. Integer scale
+is floor(min(canvasWidth/240, canvasHeight/208)); when that is zero, use the
+positive fractional fit. Center the whole arena without stretching or clipping.
+Small portrait phone windows necessarily show a smaller arena; a larger or
+landscape browser window improves readability without changing game orientation.
 
-Nearest min/mag filters, no mipmaps, clamp-to-edge, MSAA 1 and CSS pixelated
-preserve hard texture boundaries. Simulation positions retain full precision.
-Fractional DPR and fractional fallback do not promise universal physical pixel
-alignment. Resize observes current canvas CSS dimensions on each draw.
+Foundation originally used a 320×272 logical stage with an internal border.
+The updated template reconciliation separates that border into CSS UI space
+and renders the arena directly, preventing touch controls from covering tiles.
 
-Initialization for the same canvas is serialized and disposal is idempotent,
-including React StrictMode initialization/remount. A failed adapter request
-shows an error and keeps surrounding UI mounted.
+Internal render resolution is **Native**: Babylon Lite renders directly into
+its DPR-aware backing canvas, without a reduced intermediate target. Authored
+16px textures, nearest sampling and integer presentation provide the pixel-art
+look. Reducing native resolution merely to evoke an era would discard detail
+and worsen moving sprite edges, so the template's showcase Quarter/Half/Double
+picker is not included in this game.
 
-Verification so far: Chrome WebGPU desktop keyboard bomb elimination,
-restart and pause/resume; mobile emulated touch bomb elimination/restart,
-concurrent touch/cancellation, DPR 1.5; no page exceptions in either run.
-Screenshots are `foundation-desktop.png` and `foundation-mobile.png`.
-Additional browser checks passed for movement with bomb escape, fullscreen entry/exit, CSS zoom at 125%, and unsupported-WebGPU recovery. Physical touch hardware remains unverified.
+| Term | Mapping |
+| --- | --- |
+| Logical resolution | 240×208 game pixels; precise simulation coordinates ×16 |
+| CSS canvas size | Space reserved for the arena within the fixed viewport |
+| Display size | Logical size × integer fit, or positive fractional fallback |
+| Internal render resolution | Native backing resolution |
+| Canvas backing | CSS canvas size × devicePixelRatio, managed by Lite |
 
+The application never assigns canvas.width or canvas.height. DPR is applied
+once to sprite backing coordinates; the engine owns backing allocation.
+React UI stays at independent CSS resolution.
 
-Template source inspected: e526677d65c6bacee5cddd17189213cf565d90c9. Foundation production preview passed the same WebGPU play-through under /babylon-lite-bomberman-clone/.
+Nearest min/mag filtering, no mipmaps, clamp-to-edge, MSAA 1 and CSS pixelated
+retain hard artwork boundaries. Precise predicted/interpolated positions are
+not rounded per simulation tick. Fractional DPR and fractional fit suspend
+strict physical pixel-alignment guarantees.
+
+## Lifecycle and verification
+
+Same-canvas initialization is serialized, disposal is idempotent, and
+StrictMode cancels stale initialization. Unsupported WebGPU and allocation
+failures display useful messages while surrounding UI remains mounted.
+
+Foundation browser checks covered keyboard movement, bomb escape, elimination,
+restart, pause/resume, fullscreen entry/exit, 125% zoom, unsupported WebGPU and
+emulated multitouch cancellation at DPR 1.5. Those historical screenshots use
+the earlier framing; current multiplayer screenshots show the reconciled layout.
+Current browser checks assert fixed ratio, four gutters, four UI corners, a
+positive visible canvas and touch controls outside the canvas.
+
+Physical touch hardware remains unverified.
+
+## Template provenance and overrides
+
+Initial source: e526677d65c6bacee5cddd17189213cf565d90c9.
+Updated source: **6a6b7d1b6da77c36b76344c38d110ff56b6db889**, pulled successfully
+on the first attempt after stable checkpoint **88b39a5**. Adapted instructions,
+fixed landscape layout, four gutters, UI layer, rendering guidance and
+initialization messages. Kept project history, project-name/ application root,
+game assets, native render resolution and latest-stable OpenSpec 1.14.0 skills.
+The user's explicit original music requirement overrides the template's advice
+against music; original effects, mute checkbox, volume and ?mute=1 belong to
+Gameplay Polish. Template showcase controls and assets are not gameplay.

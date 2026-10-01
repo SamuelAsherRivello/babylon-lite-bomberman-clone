@@ -11,7 +11,20 @@ async function until(fn,label,timeout=10000){const end=Date.now()+timeout;while(
 async function page(options={}){
  const context=await browser.newContext({viewport:{width:1280,height:900},...options});const p=await context.newPage();pages.push(p);
  p.on('console',message=>{const text=message.text();if(/min uptime|No more retries|Network offline|will retry|reconnection successful/.test(text))console.log(text);});
- p.on('pageerror',e=>errors.push(e.message));await p.goto(url);await p.getByRole('button',{name:'Play online',exact:true}).click();return p;
+ p.on('pageerror',e=>errors.push(e.message));await p.goto(url);await p.getByRole('button',{name:'Play online',exact:true}).click();await checkLayout(p);return p;
+}
+async function checkLayout(p){
+ const fit=await p.evaluate(()=>{
+  const box=document.querySelector('#viewport').getBoundingClientRect(),canvas=document.querySelector('canvas').getBoundingClientRect();
+  const corners=[...document.querySelectorAll('#ui_layer .corner')].map(n=>n.getBoundingClientRect());
+  const touch=document.querySelector('.touch-controls'),touchBox=touch.getBoundingClientRect();
+  return {ratio:box.width/box.height,gutters:document.querySelectorAll('.gutter').length,
+   canvasFits:canvas.height>0&&canvas.top>=box.top&&canvas.bottom<=box.bottom,
+   cornersFit:corners.length===4&&corners.every(n=>n.left>=box.left&&n.right<=box.right&&n.top>=box.top&&n.bottom<=box.bottom),
+   touchFits:getComputedStyle(touch).display==='none'||(touchBox.top>=canvas.bottom&&touchBox.bottom<=box.bottom)};
+ });
+ assert.ok(Math.abs(fit.ratio-320/272)<.001,'one fixed landscape ratio at every browser size');
+ assert.equal(fit.gutters,4);assert.ok(fit.canvasFits&&fit.cornersFit&&fit.touchFits,'arena and primary controls fit within viewport');
 }
 async function mintPosition(p){
  const screenshot=await p.screenshot();return p.evaluate(async bytes=>{
@@ -31,7 +44,7 @@ try {
  observer=new MultiplayerClient(process.env.BACKEND_URL||'https://rmc-colyseus-multiplayer-server.vercel.app','bomberman',{code});void observer.connect();await until(()=>observer.state.status==='connected','spectator admission');const first=observer.state.gameState.people.find(p=>p.number===0);assert.ok(!observer.state.gameState.players.some(p=>p.id===observer.state.sessionId),'late observer spectates');
  // Delay outbound WebSocket traffic and add bounded deterministic jitter. The
  // transport instance already exists; patch its prototype without touching admission.
- await a.evaluate(()=>{const original=WebSocket.prototype.send;window.restoreTransport=()=>{WebSocket.prototype.send=original;};let packet=0;WebSocket.prototype.send=function(data){const copy=ArrayBuffer.isView(data)?new Uint8Array(data.buffer,data.byteOffset,data.byteLength).slice():data instanceof ArrayBuffer?data.slice(0):data;const ws=this;setTimeout(()=>{if(ws.readyState===WebSocket.OPEN)original.call(ws,copy);},180+(packet++%4)*20);};});
+ await a.evaluate(()=>{const original=WebSocket.prototype.send;window.restoreTransport=()=>{WebSocket.prototype.send=original;};let packet=0,delivery=0;WebSocket.prototype.send=function(data){const copy=ArrayBuffer.isView(data)?new Uint8Array(data.buffer,data.byteOffset,data.byteLength).slice():data instanceof ArrayBuffer?data.slice(0):data;const ws=this;delivery=Math.max(delivery+1,performance.now()+180+(packet++%4)*20);setTimeout(()=>{if(ws.readyState===WebSocket.OPEN)original.call(ws,copy);},Math.max(0,delivery-performance.now()));};});
  const before=await mintPosition(a);await a.keyboard.down('ArrowRight');await a.waitForTimeout(80);const immediate=await mintPosition(a);assert.ok(immediate.x>before.x+2,'movement renders before delayed outbound input can reach server');
  await a.waitForTimeout(220);await a.keyboard.up('ArrowRight');await a.waitForTimeout(1000);const local=await mintPosition(a),remote=await mintPosition(b);assert.ok(Math.abs(local.x-remote.x)<8,'reconciled local and interpolated remote positions converge');
  await a.keyboard.down('ArrowDown');await a.waitForTimeout(100);await a.getByRole('button',{name:'Settings'}).click();await a.waitForTimeout(400);

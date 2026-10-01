@@ -36,7 +36,7 @@ The client pins the shared release package and defaults to `https://rmc-colyseus
 
 ### Rendering and assets
 
-The landscape logical stage is 320×272 with 16px tiles and a 15×13 arena. Portrait phones retain the complete arena through centered letterboxing, with touch controls below it; orientation is automatic, with no selector. Integer CSS scaling, nearest texture sampling, no mipmaps/MSAA and one DPR conversion preserve sharp artwork. Small viewports use positive fractional fit. [Rendering details and asset provenance](project-name/documentation/rendering.md) and [deterministic rules](project-name/documentation/game-rules.md) describe the implementation. All current game textures are original code-authored pixel art.
+The viewport has one fixed landscape ratio of 320:272, with four outside gutters. The rendered arena is 240×208 logical pixels: 15×13 tiles at 16px. HUD and touch controls have separate CSS space above/below it, including in portrait browser windows and fullscreen. There is no orientation selector. Native DPR-aware rendering, integer CSS fit, nearest texture sampling and no mipmaps/MSAA preserve sharp artwork; small viewports use positive fractional fit. [Rendering details and asset provenance](project-name/documentation/rendering.md) and [deterministic rules](project-name/documentation/game-rules.md) describe the implementation. All current game textures are original code-authored pixel art.
 
 ## OpenSpec milestones
 
@@ -54,7 +54,7 @@ Client release uses the existing Release GitHub Actions workflow and `version.tx
 
 ## Verification
 
-Fourteen automated checks cover arena symmetry, collision, bomb capacity/fuse, owner passage, chains, deterministic outcomes, pause/restart, scaling, immediate prediction, reconciliation and rejected cosmetic bombs. Chrome WebGPU checks exercised keyboard movement/bomb escape, elimination, restart, pause/resume, fullscreen, zoom, unsupported-WebGPU recovery, and emulated mobile multitouch/cancellation at DPR 1.5. Physical touch hardware is unverified.
+Sixteen automated checks cover arena symmetry, collision, bomb capacity/fuse, owner passage, chains, deterministic outcomes, pause/restart, scaling, immediate prediction, gradual local reconciliation, uniform remote interpolation under uneven snapshot arrival, and rejected cosmetic bombs. Chrome WebGPU checks exercised keyboard movement/bomb escape, elimination, restart, pause/resume, fullscreen, zoom, unsupported-WebGPU recovery, and emulated mobile multitouch/cancellation at DPR 1.5. Physical touch hardware is unverified.
 
 With the application running and Google Chrome installed, `npm run test:browser` exercises independent browser contexts, private rooms, readiness, authoritative elimination, a late spectator, 180–240ms outbound latency/jitter, pixel-level local movement, remote convergence, offline recovery and mobile joining. The default application URL is `http://127.0.0.1:5173/babylon-lite-bomberman-clone/`; set `GAME_URL` to use another local or public URL and `BACKEND_URL` only when the application was built for a different backend. Final online acceptance remains pending.
 

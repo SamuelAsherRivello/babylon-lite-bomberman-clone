@@ -4,17 +4,21 @@ context: |
   Purpose: original SNES-inspired 2D competitive Bomberman Clone for 2–4
   online players, delivered as a public multiplayer demo linked from README.
   Verified baseline: React/Vite ESM, npm root, application under project-name/;
-  no game renderer or networking is installed yet. Selected stack: Babylon
-  Lite/WebGPU and Colyseus; preserve template corner UI roles and application root.
+  Babylon Lite 1.32.0/WebGPU renderer and released Colyseus shared client
+  v0.9.2 are installed. Preserve template corner UI roles and application root.
+  Landscape-only viewport, four gutters, nearest-sampled 16px original tiles,
+  precise simulation/prediction coordinates and CSS-resolution React UI.
   Runtime targets: desktop and mobile WebGPU browsers with keyboard and touch.
   Deployment: existing GitHub Pages workflow for the client; shared server at
-  SamuelAsherRivello/rmc-colyseus-multiplayer-server, whose hosting and release
-  configuration must be verified during multiplayer exploration.
+  SamuelAsherRivello/rmc-colyseus-multiplayer-server. Backend release v0.9.2
+  passed deployment and existing-game live checks. Vercel has a
+  300-second connection lifetime; full-match hosting continuity remains to resolve.
   Dependencies: add only required packages, verify compatible pinned renderer
   and networking APIs against actual source; never substitute full Babylon.js.
   Security: authoritative server validates gameplay inputs, no browser secrets,
   bounded room/reconnection state, preserve unrelated work and existing games.
-  Verified commands: npm ci, npm test, npm run build, npm run dev, npm run preview.
+  Verified commands: npm ci, npm test, npm run build, npm run dev, npm run preview,
+  npm run test:browser (requires running game/backend and Chrome WebGPU).
   OpenSpec CLI 1.14.0 and doctor verified healthy. Implement three sequential
   changes: Foundation, Multiplayer Setup, Gameplay Polish; finish, verify,
   sync and archive each before proposing the next. Planning requests alone

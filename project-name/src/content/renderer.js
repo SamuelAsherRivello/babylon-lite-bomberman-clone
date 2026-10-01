@@ -1,5 +1,6 @@
 import { enableErrorDecoding, createEngine, loadTexture2D, createGridSpriteAtlas, createSprite2DLayer, addSprite2D, updateSprite2D, createSpriteRenderer, registerSpriteRenderer, startEngine, disposeEngine, disposeSpriteRenderer, disposeSpriteAtlas, releaseTexture } from '@babylonjs/lite';
-export const LOGICAL = { width: 320, height: 272 };
+import { getInitializationMessage } from './initialization.js';
+export const LOGICAL = { width: 240, height: 208 };
 export function presentation(width, height, dpr = 1) {
   const fit = Math.min(width / LOGICAL.width, height / LOGICAL.height);
   const scale = fit >= 1 ? Math.floor(fit) : fit;
@@ -41,7 +42,7 @@ async function initializeRenderer(canvas) {
     registerSpriteRenderer(renderer);await startEngine(engine);
     return{dispose,draw(g){
       const map=presentation(canvas.clientWidth,canvas.clientHeight,window.devicePixelRatio||1);let used=0;
-      const put=(x,y,frame,size=16)=>{if(used>=sprites.length)return;updateSprite2D(sprites[used++],{visible:true,positionPx:[map.x+(40+x*16)*map.unit,map.y+(32+y*16)*map.unit],sizePx:[size*map.unit,size*map.unit],frame});};
+      const put=(x,y,frame,size=16)=>{if(used>=sprites.length)return;updateSprite2D(sprites[used++],{visible:true,positionPx:[map.x+x*16*map.unit,map.y+y*16*map.unit],sizePx:[size*map.unit,size*map.unit],frame});};
       for(let y=0;y<13;y++)for(let x=0;x<15;x++)put(x+.5,y+.5,g.board[y*15+x]);
       for(const b of g.bombs)put(b.x+.5,b.y+.5,3,Math.sin(g.time*10)>0?16:15);
       for(const b of g.pendingBombs||[])put(b.x+.5,b.y+.5,9);
@@ -50,7 +51,7 @@ async function initializeRenderer(canvas) {
       for(let n=used;n<sprites.length;n++)updateSprite2D(sprites[n],{visible:false});
       return map;
     }};
-  }catch(error){dispose();throw error;}
+  }catch(error){dispose();console.error('Game graphics initialization failed:',error);throw new Error(getInitializationMessage(Boolean(navigator.gpu),error));}
 }
 
 

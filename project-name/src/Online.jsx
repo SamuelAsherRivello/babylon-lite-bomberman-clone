@@ -5,6 +5,7 @@ import { createGameRenderer } from './content/renderer.js';
 import { createControls } from './input/controls.js';
 import { createGame } from './game/rules.js';
 import versionText from '../../version.txt?raw';
+import { Viewport } from './ui/Viewport.jsx';
 
 export const SERVER = import.meta.env.VITE_MULTIPLAYER_SERVER || 'https://rmc-colyseus-multiplayer-server.vercel.app';
 const COLORS = ['Mint', 'Amber', 'Violet', 'Rose'];
@@ -49,8 +50,9 @@ export function Online({ onExit }) {
   const toggleSettings=()=>{menu.current=!menu.current;controls.current?.clear();setSettings(menu.current);};
   const touch=(action,label)=><button aria-label={label} onPointerDown={e=>{e.currentTarget.setPointerCapture(e.pointerId);controls.current?.touch(e.pointerId,action);}} onPointerUp={e=>controls.current?.release(e.pointerId)} onPointerCancel={e=>controls.current?.release(e.pointerId)} onLostPointerCapture={e=>controls.current?.release(e.pointerId)}>{label}</button>;
   const g=session.gameState,me=g?.people.find(p=>p.id===session.sessionId),actor=g?.players.find(p=>p.id===session.sessionId);
-  return <main className="surface"><div className="viewport">
+  return <Viewport>
     <canvas ref={canvas} aria-label="Online Bomberman arena"/>
+    <div id="ui_layer">
     <header className="corner corner_top_left"><span className="eyebrow">ARCADE / ONLINE BATTLE</span><h1>Bomberman Clone</h1></header>
     <nav className="corner corner_top_right"><button onClick={onExit}>Local practice</button><a href="https://github.com/SamuelAsherRivello/babylon-lite-bomberman-clone" target="_blank" rel="noreferrer">GitHub ↗</a></nav>
     {g&&<div className="hud"><span>ROOM {g.code} · ROUND {g.round}</span><span>{g.phase==='playing'?`${Math.ceil(g.remaining)}s · ${actor?.alive?'ALIVE':'SPECTATING'}`:g.phase.toUpperCase()}</span></div>}
@@ -64,5 +66,6 @@ export function Online({ onExit }) {
     <div className="touch-controls"><div className="pad">{touch('up','↑')}{touch('left','←')}{touch('down','↓')}{touch('right','→')}</div><div className="bomb-control">{touch('bomb','BOMB')}</div></div>
     <section className="corner corner_bottom_left"><button onClick={toggleSettings}>⚙ Settings</button></section>
     <footer className="corner corner_bottom_right">v{versionText.trim().replace(/^version=/,'')}<span>ONLINE MULTIPLAYER</span></footer>
-  </div></main>;
+    </div>
+  </Viewport>;
 }

@@ -11,6 +11,6 @@ test('project identity, layout and production subpath',async()=>{
  assert.ok(app.includes('SamuelAsherRivello/babylon-lite-bomberman-clone'));assert.ok(app.includes('versionText'));
 });
 test('pixel presentation preserves integer fit and positive fallback',()=>{
- assert.equal(presentation(640,544).scale,2);assert.equal(presentation(800,600).scale,2);
- assert.equal(presentation(160,136).scale,.5);assert.equal(presentation(640,544,1.5).unit,3);
+ assert.equal(presentation(480,416).scale,2);assert.equal(presentation(800,600).scale,2);
+ assert.equal(presentation(120,104).scale,.5);assert.equal(presentation(480,416,1.5).unit,3);
 });

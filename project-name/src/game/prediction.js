@@ -11,14 +11,34 @@ export function predictMovement(state, id, input) {
 }
 
 export class ReconciledView {
-  constructor() { this.pending = []; this.ghosts = []; this.positions = new Map(); this.offset = { x: 0, y: 0 }; this.round = null; }
+  constructor(now = () => performance.now() / 1000) {
+    this.now = now; this.pending = []; this.ghosts = []; this.positions = new Map();
+    this.offset = { x: 0, y: 0 }; this.velocity = { x: 0, y: 0 }; this.round = null;
+    this.clockOffset = Infinity; this.renderTime = -Infinity;
+  }
   accept(state, localId) {
     const previous = this.state?.players.find(p => p.id === localId);
     const reset = state.round !== this.round || state.phase !== 'playing';
     this.round = state.round;
     this.state = structuredClone(state);
     const local = this.state.players.find(p => p.id === localId);
-    if (reset) { this.pending = []; this.ghosts = []; this.positions.clear(); this.offset = { x: 0, y: 0 }; }
+    if (reset) {
+      this.pending = []; this.ghosts = []; this.positions.clear();
+      this.offset = { x: 0, y: 0 }; this.velocity = { x: 0, y: 0 };
+      this.clockOffset = Infinity; this.renderTime = -Infinity;
+    }
+    const received = this.now();
+    const time = Number.isFinite(state.serverTick) ? state.serverTick / 60 : received;
+    this.clockOffset = Math.min(this.clockOffset, received - time);
+    for (const p of state.players) {
+      if (p.id === localId) continue;
+      const samples = this.positions.get(p.id) || [];
+      if (samples.length && time < samples.at(-1).time) continue;
+      if (samples.length && time === samples.at(-1).time) samples.pop();
+      samples.push({ time, x: p.x, y: p.y });
+      if (samples.length > 24) samples.shift();
+      this.positions.set(p.id, samples);
+    }
     if (local) {
       this.pending = this.pending.filter(frame => frame.seq > local.ack);
       this.ghosts = this.ghosts.filter(b => b.seq > local.ack && !state.bombs.some(q=>q.x===b.x&&q.y===b.y));
@@ -29,7 +49,9 @@ export class ReconciledView {
       if (previous && !reset && local.alive) {
         const dx = previous.x + this.offset.x - local.x, dy = previous.y + this.offset.y - local.y;
         this.offset = Math.hypot(dx, dy) < .8 ? { x: dx, y: dy } : { x: 0, y: 0 };
+        if (Math.hypot(dx, dy) >= .8) this.velocity = { x: 0, y: 0 };
       }
+      if (!local.alive) { this.offset = { x: 0, y: 0 }; this.velocity = { x: 0, y: 0 }; }
     }
   }
   advance(localId, input, seq) {
@@ -46,14 +68,29 @@ export class ReconciledView {
     if (!this.state) return null;
     const state = structuredClone(this.state);
     this.ghosts=this.ghosts.filter(b=>b.until>performance.now());state.pendingBombs=this.ghosts;
-    const blend = 1 - Math.exp(-dt * 18);
-    this.offset.x *= Math.exp(-dt * 15); this.offset.y *= Math.exp(-dt * 15);
+    // Critically damped corrections preserve position and correction velocity
+    // across acknowledgements. Prediction itself still responds immediately.
+    const elapsed = Math.max(0, Math.min(dt, .1));
+    const omega = 24, decay = Math.exp(-omega * elapsed);
+    for (const axis of ['x', 'y']) {
+      const temp = (this.velocity[axis] + omega * this.offset[axis]) * elapsed;
+      this.velocity[axis] = (this.velocity[axis] - omega * temp) * decay;
+      this.offset[axis] = (this.offset[axis] + temp) * decay;
+    }
+    // Render 100ms behind the estimated server clock, so uneven packet arrival
+    // usually leaves two snapshots to interpolate rather than chase.
+    this.renderTime = Math.max(this.renderTime, this.now() - this.clockOffset - .1);
     for (const p of state.players) {
       if (p.id === localId) { p.x += this.offset.x; p.y += this.offset.y; }
       else {
-        const old = this.positions.get(p.id) || { x: p.x, y: p.y };
-        old.x += (p.x - old.x) * blend; old.y += (p.y - old.y) * blend;
-        this.positions.set(p.id, old); p.x = old.x; p.y = old.y;
+        const samples = this.positions.get(p.id);
+        if (!samples?.length || !p.alive) continue;
+        while (samples.length > 2 && samples[1].time <= this.renderTime) samples.shift();
+        const a = samples[0], b = samples[1] || a;
+        const span = b.time - a.time;
+        // Hold after the newest snapshot: no invented movement through walls.
+        const t = span > 0 ? Math.max(0, Math.min(1, (this.renderTime - a.time) / span)) : 0;
+        p.x = a.x + (b.x - a.x) * t; p.y = a.y + (b.y - a.y) * t;
       }
     }
     return state;
