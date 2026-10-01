@@ -1,140 +1,40 @@
+Update this prompt to be for Bomberman for SNES, a 2D multiplayer game using Colyseus.
+
 $ai-skills-create-game
 
-- Title: Bomberman Clone
-- Type: Multiplayer, online competitive, 2–4 players using Colyseus. Each human player competes individually.
-
-- Delivery and milestones:
-  - Update the existing babylon-lite-bomberman-clone repository and the shared Colyseus server repository as required.
-  - Use Babylon Lite with WebGPU and publish the completed game to GitHub Pages.
-  - Organize the work into three consecutive OpenSpec proposals, each representing one milestone:
-    1. Foundation
-       - Establish the application structure, 2DPixelPerfect rendering, original 2D arena presentation, fixed camera, desktop and touch controls, and testable core game rules.
-       - Deliver a locally playable foundation with movement, collision, bombs, blasts, destructible blocks, and restart behavior.
-    2. Multiplayer Setup
-       - Extend, test, release, and verify the shared Colyseus server.
-       - Integrate room creation and joining, shareable room codes, ready states, authoritative gameplay, synchronized arena state, prediction, interpolation, and reconnect handling.
-       - Deliver a deployed multiplayer build verified with at least two browser clients.
-    3. Gameplay Polish
-       - Complete power-ups, round and match scoring, sudden death, spectator behavior, rematches, original artwork and audio, UI feedback, and responsive presentation.
-       - Test fairness, timing, latency, jitter, recovery, and the complete multiplayer match loop. Fix issues found during browser playtesting.
-       - Release and verify the final public multiplayer demo.
-  - Work through these milestones sequentially. Finish and verify one milestone before creating the next proposal.
-  - For each milestone:
-    - Use OpenSpec explore to inspect the repositories, investigate implementation choices, and identify risks and dependencies.
-    - Use OpenSpec propose to create a focused proposal, design, requirements, acceptance criteria, and implementation tasks.
-    - Use OpenSpec apply to implement the proposal and keep its tasks current.
-    - Follow applicable OpenSpec guidance and repository skills for verification, spec synchronization, archiving, scoped commits, and pushing changes.
-    - Update relevant documentation and both repositories when that milestone requires server and client changes.
-    - Complete required checks and resolve material failures before proceeding to the next milestone.
-  - Continue automatically from one completed milestone to the next within the approved scope. Ask only when a material unresolved decision or missing authorization blocks progress.
-  - Preserve unrelated work and do not create pull requests.
-  - Treat milestone deliverables as intermediate acceptance gates. Continue until all three milestones and final public verification are complete.
-
+- Title: [Enter the Gungeon Clone]
+- Type: [Multiplayer, online cooperative, 2–4 players. All human players cooperate on the same team.]
 - World and camera:
-  - Create a single-screen, tile-based 2D arena inspired by SNES-era Super Bomberman battle mode.
-  - Use a 15-column by 13-row grid with solid outer walls, indestructible pillars, destructible blocks, and clear starting areas in separate corners.
-  - Use a fixed top-down orthographic camera showing the entire arena. Maintain a landscape play area with readable tiles on desktop and mobile.
-
-- 2DPixelPerfect rendering:
-  - Respect the template’s 2DPixelPerfect rendering policy and integration guidance. It is a template configuration, not a Babylon Lite API.
-  - During the Foundation milestone’s OpenSpec exploration, inspect the current template’s rendering configuration, pixel-perfect helpers, and layout documentation:
-    https://github.com/SamuelAsherRivello/github-repository-template/blob/HEAD/project-name/documentation/layout-and-game-integration.md
-  - Adapt the relevant template improvements into this existing repository while preserving project-specific changes.
-  - Choose and document the logical game resolution, tile size, and viewport aspect ratio that best suit the 15×13 arena, original pixel artwork, HUD, and desktop/mobile readability. Do not inherit the template’s 320×180 showcase resolution automatically.
-  - Evaluate 16×16 logical-pixel tiles as a starting point: the arena alone would occupy 240×208 logical pixels. Choose the final stage dimensions after allowing sufficient space for HUD and controls and reviewing actual browser presentation.
-  - Distinguish logical resolution, internal render resolution, canvas backing resolution, and CSS display size. Document their mapping and select an internal rendering approach that preserves authored pixel detail.
-  - Use nearest-neighbor texture minification and magnification, disable mipmaps, use clamp-to-edge addressing, disable MSAA with msaaSamples: 1, and retain CSS image-rendering: pixelated.
-  - Use centered integer logical-to-CSS scaling whenever the available space permits, with internal letterboxing instead of stretching.
-  - When integer scaling cannot fit, use a positive fractional fit that keeps the entire arena visible. Document that strict pixel-alignment guarantees are suspended in this fallback.
-  - Let Babylon Lite manage its DPR-aware canvas backing size. Apply DPR exactly once and avoid manually double-scaling canvas dimensions.
-  - Preserve smooth predicted movement and remote interpolation. Keep simulation coordinates precise; apply any pixel alignment only to presentation, and verify that it does not introduce visible movement jitter.
-  - Keep React UI at independent CSS resolution. Keep essential HUD and controls inside the viewport so they remain available in fullscreen.
-  - Verify crisp artwork, readable UI, correct input mapping, and complete arena visibility across desktop, narrow mobile, resize, fullscreen, browser zoom, and fractional DPR.
-  - Record the chosen resolution and its rationale in the Foundation design and documentation. Revisit it during Gameplay Polish if browser playtesting reveals readability or scaling problems.
-
-- Core loop:
-  - Move through the arena, place timed bombs, destroy blocks, collect power-ups, and trap opponents while escaping explosions.
-  - The last surviving player wins the round. The first player to win three rounds wins the match.
-
-- Controls:
-  - WASD or arrow keys to move and Space to place a bomb.
-  - Provide an on-screen directional pad and bomb button for touch devices, supporting simultaneous movement and bomb placement.
-  - Clear held inputs when the browser loses focus or touch input is cancelled.
-  - Keep game controls available to the content layer; do not let React UI shortcuts intercept WASD, arrow keys, Space, or Enter.
-
-- Competitive mechanics:
-  - Create or join a room using a shareable room code, choose a distinct player color, and ready up together.
-  - Start with 2–4 players and show a short countdown before each round.
-  - Bomb explosions affect every player, including the player who placed the bomb.
-  - Eliminated players spectate until the next round.
-  - Resolve eliminations from the same server simulation tick together. Award no points when all remaining players are eliminated simultaneously.
-  - Show round wins, player status, remaining time, and a rematch option after the match.
-
+  - [Create one 2D level approximately twice the viewport width and twice its height, giving it about four times the area of one screen.]
+  - [The level may be tile-based or use freely placed artwork and geometry.]
+  - [Use a top-down orthographic camera that smoothly follows the local player and stays within the level boundaries.]
+- Core loop: [Cooperate to survive increasingly difficult enemy waves, dodge bullet patterns, collect loot, and choose weapon upgrades between waves. Defeat a boss every five waves. The run ends when the entire team is down.]
+- Controls: [WASD movement, mouse aiming, left-click shooting, and Space to dodge roll with a short cooldown and brief invulnerability.]
+- Cooperative mechanics:
+  - [Create or join a room using a shareable room code, then ready up together.]
+  - [Revive downed teammates, share upgrade rewards, and disable friendly fire.]
+  - [Scale enemy counts and difficulty with the number of active players.]
+  - [Show directional indicators for teammates outside the local camera view.]
 - Look and feel:
-  - Create original pixel-art scenery, characters, bombs, blocks, power-ups, and explosion effects inspired by the readability and playful feel of SNES-era Super Bomberman.
-  - Use crisp pixel rendering, a cohesive colorful palette, distinct player silhouettes and colors, expressive walking animations, and clear elimination feedback.
-  - Make bomb fuses, explosion paths, solid walls, destructible blocks, and collectible power-ups easy to distinguish.
-  - Create original arcade-style music and sound effects, with mute and volume settings.
-  - Preserve the template’s corner UI roles: title upper left, project links upper right, version lower right, and settings lower left.
-  - Keep important information readable without covering the arena or requiring scrolling to play.
-
+  - [Original pixel-art dungeon scenery with stone floors, destructible props, and readable cover.]
+  - [Distinct player colors, expressive enemies, bright projectiles, punchy muzzle flashes, and clear hit feedback.]
+  - [Keep enemy bullets visually distinct from friendly shots. Show player health, teammate status, current wave, remaining enemies, and dodge cooldown.]
 - Gameplay requirements:
-  - Players begin each round with one active bomb slot and an explosion range of two tiles.
-  - Bombs explode after a 2.5-second fuse, producing a cross-shaped blast along the grid.
-  - Indestructible walls stop blasts. Destructible blocks are destroyed and stop that blast from continuing beyond their tile.
-  - Explosions trigger other bombs immediately, allowing chain reactions.
-  - Blasts remain dangerous for 0.5 seconds and eliminate players who touch them.
-  - A player may leave a newly placed bomb tile, but cannot move back through the bomb while it remains active.
-  - Include power-ups for additional active bombs, increased blast range, and faster movement.
-  - Cap active bomb capacity at five and blast range at eight tiles. Provide three speed upgrades, each increasing base movement speed by 15%.
-  - Hide power-ups beneath some destructible blocks. Reveal them after the destroying blast clears, and allow later explosions to destroy exposed power-ups.
-  - Keep spawn areas clear and give every starting position equal escape routes. Use rotationally symmetric block placement and power-up distribution for fairness.
-  - Use a two-minute round timer.
-  - During the final 30 seconds, introduce clearly telegraphed sudden-death walls in a deterministic inward pattern. Warn players one second before each affected tile closes.
-  - If no single survivor remains when time expires, declare a draw.
-  - Reset the arena and player upgrades between rounds. Provide short breaks showing scores and a rematch option after the match.
-  - Include clear instructions, loading and connection states, and useful recovery messages.
-  - Show a useful unsupported-WebGPU or initialization-error message instead of a blank canvas.
-  - In online matches, opening settings or losing focus stops local input while the authoritative match continues. Do not pause the shared simulation for one player.
-
+  - [Include three starting weapons with distinct firing patterns and meaningful upgrades.]
+  - [Include enemies that chase, fire aimed shots, and emit radial bullet patterns.]
+  - [Provide short breaks between waves for upgrades and a team restart option after defeat.]
 - Multiplayer server and smoothness:
-  - Use https://github.com/SamuelAsherRivello/rmc-colyseus-multiplayer-server.
-  - Update that server repository with this game’s Colyseus room logic and synchronized state, preserving existing games and unrelated work.
-  - Extend, test, release, and verify the shared server during Multiplayer Setup before completing multiplayer client integration.
-  - Make the server authoritative for movement validation, collision, bomb placement, bomb capacity, fuse timing, blast propagation, chain reactions, block destruction, power-up spawning and collection, elimination, sudden death, round outcomes, and match scores.
-  - Use continuous movement constrained by the tile grid, with consistent collision and gentle alignment assistance through corridors.
-  - Use supported Colyseus prediction features where available, or implement client-side prediction, server reconciliation, and interpolation.
-  - Respond immediately to local movement. Smooth small reconciliation corrections while keeping collision and elimination outcomes consistent with the server.
-  - Give immediate cosmetic feedback for bomb-placement input, then confirm or remove the pending visual when the server accepts or rejects it.
-  - Interpolate remote players. Synchronize bomb fuse deadlines and explosion events against server time so every client sees consistent timing.
-  - Represent blast paths as deterministic tile events and synchronize arena changes efficiently. Keep cosmetic particles client-side.
-  - Prioritize reliable bomb timing, responsive movement, and fair outcomes over visual effect density.
-  - Allow a 15-second reconnection window. Stop movement when a player disconnects, keep their character vulnerable, and preserve their identity and scores if they reconnect in time.
-  - Remove disconnected players after the reconnection window. If fewer than two connected players remain, return to the lobby after resolving the current round.
-  - Verify with at least two browser clients, including simulated latency and jitter. Check responsive local movement, smooth remote motion, consistent bomb collisions, chain reactions, power-up collection, simultaneous eliminations, round scoring, and reconnect behavior.
-
+  - [Use https://github.com/SamuelAsherRivello/rmc-colyseus-multiplayer-server or my writable fork: <fork URL, if applicable>.]
+  - [Automatically update the selected server repository with the room logic and synchronized state required by this game.]
+  - [Make the server authoritative for movement validation, combat, enemy spawning, damage, loot, revives, and wave progression.]
+  - [Use supported Colyseus prediction features where available, or implement suitable client-side prediction, server reconciliation, and interpolation.]
+  - [Respond immediately to local movement and dodge inputs. Smooth reconciliation corrections and drive the camera from the predicted local character position to avoid visible jitter.]
+  - [Interpolate remote players and enemies. Use immediate local animations, muzzle flashes, and cosmetic effects while reconciling gameplay outcomes with the server.]
+  - [Use deterministic projectile motion or other bandwidth-efficient synchronization where appropriate.]
+  - [Prioritize a smooth, consistent experience for every player over action density. If synchronization struggles, reduce concurrent bullets, enemies, spawn rates, and firing rates.]
+  - [Handle disconnects and reconnects gracefully.]
+  - [Verify with at least two browser clients, including simulated latency and jitter. Check responsive local movement, stable camera tracking, smooth remote motion, and consistent combat outcomes.]
 - Inspiration links:
-  - Gameplay reference: https://en.wikipedia.org/wiki/Super_Bomberman
-  - Visual reference search: https://www.google.com/search?udm=2&q=bomberman+snes+graphics
-  - Use Super Bomberman’s single-screen battle arenas, grid-based bomb tactics, readable pixel art, and fast competitive rounds as inspiration.
-  - Use screenshots found through the visual reference link to study proportions, tile readability, palette, and animation style. No separate screenshot attachments are supplied.
-
-- Originality requirement:
-  - Keep the title Bomberman Clone.
-  - Create original artwork, sounds, characters, UI, and arena layouts.
-  - Use the references for gameplay and visual inspiration without copying their assets, logos, character designs, or exact maps.
-
-- Final acceptance:
-  - The end goal is a publicly accessible, playable multiplayer demo link.
-  - Run meaningful gameplay tests, applicable repository checks, and production builds for the game and server.
-  - Verify the deployed game with at least two browser clients joining the same room and completing a match.
-  - Confirm that public asset loading, server connectivity, room codes, controls, bomb timing, eliminations, scoring, and rematches work.
-  - Verify desktop and narrow mobile presentation and emulated touch controls. Distinguish emulated testing from physical-device verification.
-  - Document setup, controls, gameplay, rendering resolution, asset provenance, browser requirements, screenshots, and known limitations.
-  - Preserve this actual request in the README’s collapsible Original AI Prompt section.
-  - Complete release and deployment workflows, verify the public version, and synchronize local checkouts with release-generated commits.
-  - Return the playable demo URL, game and server repository links, release links, local checkout paths, verification results, and any remaining limitations.
-  - Report the completion status of all three OpenSpec milestones. Do not claim completion based only on a successful build or deployment job.
-
-Follow-up requirement (2026-10-01):
-The game may choose Portrait or landscape. Once you choose, you can remove the user-facing toggle for that.
+  - [https://store.steampowered.com/app/311690/Enter_the_Gungeon/]
+- Inspiration screenshots: [Attach reference screenshots here.]
+- Originality requirement: [Keep the requested project title, but create original artwork, sounds, characters, weapons, UI, and level layouts; use the reference only for gameplay and visual inspiration.]
