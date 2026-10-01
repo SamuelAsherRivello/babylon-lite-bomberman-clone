@@ -59,12 +59,12 @@ repository root; keep the application's source and tests under
   them with `$openspec-*`; slash commands such as `/opsx...` are not Codex
   skill names.
 - This template preserves `.agents/skills/.openspec-target` but does not bundle skills. Generate repository-local skills in the resulting project when its OpenSpec workflow is required.
-- Verify `openspec --version` reports 1.13.1 and run `openspec doctor --json`
-  from the repository root. If the CLI is missing or a different version,
-  install `@fission-ai/openspec@1.13.1` using the official installation guide.
+- Use the latest stable `@fission-ai/openspec` CLI available when setting up
+  the project, then run `openspec doctor --json` from the repository root.
+  Install or update it using the official installation guide if needed.
 - Confirm each generated skill folder matches its `name:` frontmatter and each
-  `metadata.generatedBy` value is 1.13.1. Do not hand-edit generated OpenSpec
-  skill files.
+  `metadata.generatedBy` value matches the CLI version. Do not hand-edit
+  generated OpenSpec skill files.
 - Reopen Codex at the resulting repository root after skills are generated or
   refreshed so repository-local `$openspec-*` autocomplete is indexed for the
   new workspace.

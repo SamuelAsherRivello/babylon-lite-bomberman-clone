@@ -34,8 +34,9 @@
 
 - [x] 5.1 Play a complete local practice loop, elimination/restart and pause/resume in a real WebGPU browser with keyboard and emulated touch; capture desktop/mobile evidence, runtime errors and any physical-device limitations.
 - [x] 5.2 Validate all Foundation spec scenarios and template delivery items applicable to this milestone; verify focused checks and build pass and keep unavailable browser acceptance explicitly unverified.
-- [ ] 5.3 After authorized implementation passes acceptance, sync specs, archive Foundation, commit/push scoped files normally and check revision/status alignment; verify no unrelated work or PR creation.
+- [x] 5.3 After authorized implementation passes acceptance, sync specs, archive Foundation, commit/push scoped files normally and check revision/status alignment; verify no unrelated work or PR creation.
 - [ ] 5.4 After Foundation completion and continuation authorization, explore actual shared-server code, access, secure hosting endpoint and release workflow, then propose Multiplayer Setup using delivery-brief.md; verify the next proposal retains final README two-client match/rematch acceptance and defers Gameplay Polish proposal until milestone two completes.
+
 
 
 

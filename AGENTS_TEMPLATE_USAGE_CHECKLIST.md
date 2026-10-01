@@ -87,13 +87,16 @@ Node/npm/Vite baseline that may be retained or replaced deliberately.
 
 ## 5. Configure OpenSpec
 
-- [ ] When an OpenSpec workflow is required, generate `.agents/skills/openspec-*` files in the resulting project using OpenSpec 1.13.1. This template preserves only `.openspec-target`; do not hand-edit generated skill files.
-- [ ] Verify `openspec --version` reports 1.13.1. If the CLI is missing or a
-      different version, install `@fission-ai/openspec@1.13.1` following the
-      [official installation guide](https://openspec.dev/docs/installation).
+- [ ] When an OpenSpec workflow is required, use the latest stable OpenSpec CLI
+      available and generate `.agents/skills/openspec-*` files in the resulting
+      project. This template preserves only `.openspec-target`; do not hand-edit
+      generated skill files.
+- [ ] Verify `openspec --version` and run `openspec doctor --json`. If the CLI
+      is missing or outdated, install or update `@fission-ai/openspec` following
+      the [official installation guide](https://openspec.dev/docs/installation).
 - [ ] Run `openspec doctor --json`, confirm `.agents/skills/.openspec-target`
       contains `codex`, and confirm generated `metadata.generatedBy` values
-      are 1.13.1.
+      match the installed CLI version.
 - [ ] Reopen Codex at the resulting repository root and verify `$openspec-*`
       autocomplete includes `$openspec-apply-change` before relying on the
       repository-local workflow.
