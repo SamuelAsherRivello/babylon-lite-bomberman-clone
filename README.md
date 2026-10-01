@@ -2,13 +2,13 @@
 
 # Bomberman Clone
 
-An original SNES-inspired 2D bomb arena built with Babylon Lite and planned for competitive Colyseus multiplayer.
+An original SNES-inspired 2D bomb arena built with Babylon Lite and authoritative competitive Colyseus multiplayer.
 
 ![Foundation practice arena](project-name/documentation/foundation-desktop.png)
 
 ## Current status
 
-Foundation local practice is implemented and browser-tested. Online rooms, complete match progression, power-ups, audio, and final public delivery are pending. This is not yet the completed multiplayer demo.
+Foundation is complete. Multiplayer Setup is being verified: private rooms, readiness, colors, authoritative battles, local prediction, remote interpolation and reconnect handling are implemented. Complete first-to-three matches, power-ups, sudden death, rematches, audio and final public delivery remain in Gameplay Polish. This is not yet the completed game.
 
 ## Getting Started
 
@@ -26,9 +26,17 @@ Open the URL Vite prints. The application requires a WebGPU-enabled browser and 
 
 WASD or arrow keys move; Space places a bomb. Touch devices have direction and bomb buttons with simultaneous touch support. Bombs explode after 2.5 seconds and remain dangerous for 0.5 seconds. You can leave your newly placed bomb but cannot return through it. Destroy brick blocks and escape your own explosions. Settings pauses local practice; Resume continues and Restart resets the arena.
 
+### Online play
+
+Choose **Play online**, create a room and share its six-character code. Friends enter the code and join, then everyone chooses a color and readies up. Two to four connected players can start. Eliminated players and mid-round arrivals spectate; the round winner gains one point. The current milestone returns to a ready lobby after each round.
+
+Online settings and focus loss stop your input while the shared battle continues. A disconnected character remains vulnerable, with its seat reserved for 15 seconds. Recovery preserves identity and score when the room still exists; expired rooms offer recreation. Local practice is available independently of the backend.
+
+The client pins the shared release package and defaults to `https://rmc-colyseus-multiplayer-server.vercel.app`. For local server testing, set `VITE_MULTIPLAYER_SERVER` to your server URL before starting Vite. This is a public endpoint setting, not a secret. See [multiplayer verification and hosting limits](project-name/documentation/multiplayer-verification.md).
+
 ### Rendering and assets
 
-The current logical stage is 320×272 with 16px tiles and a 15×13 arena. Integer CSS scaling, nearest texture sampling, no mipmaps/MSAA and one DPR conversion preserve sharp artwork. Small viewports use positive fractional fit. [Rendering details and asset provenance](project-name/documentation/rendering.md) and [deterministic rules](project-name/documentation/game-rules.md) describe the implementation. All current game textures are original code-authored pixel art.
+The landscape logical stage is 320×272 with 16px tiles and a 15×13 arena. Portrait phones retain the complete arena through centered letterboxing, with touch controls below it; orientation is automatic, with no selector. Integer CSS scaling, nearest texture sampling, no mipmaps/MSAA and one DPR conversion preserve sharp artwork. Small viewports use positive fractional fit. [Rendering details and asset provenance](project-name/documentation/rendering.md) and [deterministic rules](project-name/documentation/game-rules.md) describe the implementation. All current game textures are original code-authored pixel art.
 
 ## OpenSpec milestones
 
@@ -46,7 +54,9 @@ Client release uses the existing Release GitHub Actions workflow and `version.tx
 
 ## Verification
 
-Eleven automated checks cover arena symmetry, collision, bomb capacity/fuse, owner passage, chain reactions, deterministic outcomes, pause/restart, project identity and scaling. Chrome WebGPU checks exercised keyboard movement/bomb escape, elimination, restart, pause/resume, fullscreen, zoom, unsupported-WebGPU recovery, and mobile emulated multitouch/cancellation at DPR 1.5. Physical touch hardware is unverified. Final online verification remains pending.
+Fourteen automated checks cover arena symmetry, collision, bomb capacity/fuse, owner passage, chains, deterministic outcomes, pause/restart, scaling, immediate prediction, reconciliation and rejected cosmetic bombs. Chrome WebGPU checks exercised keyboard movement/bomb escape, elimination, restart, pause/resume, fullscreen, zoom, unsupported-WebGPU recovery, and emulated mobile multitouch/cancellation at DPR 1.5. Physical touch hardware is unverified.
+
+With the application running and Google Chrome installed, `npm run test:browser` exercises independent browser contexts, private rooms, readiness, authoritative elimination, a late spectator, 180–240ms outbound latency/jitter, pixel-level local movement, remote convergence, offline recovery and mobile joining. The default application URL is `http://127.0.0.1:5173/babylon-lite-bomberman-clone/`; set `GAME_URL` to use another local or public URL and `BACKEND_URL` only when the application was built for a different backend. Final online acceptance remains pending.
 
 ## References and credits
 
@@ -202,6 +212,9 @@ $ai-skills-create-game
   - Complete release and deployment workflows, verify the public version, and synchronize local checkouts with release-generated commits.
   - Return the playable demo URL, game and server repository links, release links, local checkout paths, verification results, and any remaining limitations.
   - Report the completion status of all three OpenSpec milestones. Do not claim completion based only on a successful build or deployment job.
+
+Follow-up requirement (2026-10-01):
+The game may choose Portrait or landscape. Once you choose, you can remove the user-facing toggle for that.
 ```
 
 </details>

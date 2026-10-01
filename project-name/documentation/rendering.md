@@ -12,6 +12,10 @@ one logical-to-CSS pixel per pixel on 390px-wide mobile screens. Direct
 240×208 arena framing leaves no internal border. Desktop 1280×900 and mobile
 390×844 browser screenshots show the selected whole-arena presentation.
 
+The chosen game orientation is landscape. Portrait phones retain the complete
+landscape stage through centered letterboxing, with touch controls below the
+arena. There is no portrait/landscape setting: viewport resizing is automatic.
+
 Integer CSS scale is floor(min(availableWidth/320, availableHeight/272)).
 When that is zero the positive fractional fit is used. The stage is centered
 without stretching. Babylon Lite renders directly to its native DPR-aware

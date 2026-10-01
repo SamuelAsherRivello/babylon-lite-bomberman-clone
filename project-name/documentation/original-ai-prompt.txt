@@ -135,3 +135,6 @@ $ai-skills-create-game
   - Complete release and deployment workflows, verify the public version, and synchronize local checkouts with release-generated commits.
   - Return the playable demo URL, game and server repository links, release links, local checkout paths, verification results, and any remaining limitations.
   - Report the completion status of all three OpenSpec milestones. Do not claim completion based only on a successful build or deployment job.
+
+Follow-up requirement (2026-10-01):
+The game may choose Portrait or landscape. Once you choose, you can remove the user-facing toggle for that.

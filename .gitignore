@@ -9,3 +9,6 @@ node_modules/
 .env.*
 # Playwright CLI output (may contain credentials)
 .playwright-cli/
+
+# Temporary verification scripts and isolated upstream checkouts.
+.tmp/
