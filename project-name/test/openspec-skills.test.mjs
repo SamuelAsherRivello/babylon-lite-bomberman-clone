@@ -14,10 +14,10 @@ test("documents the bundled OpenSpec Codex skills without a checklist update", a
   const guidance = `${agents}\n${checklist}`;
 
   assert.doesNotMatch(guidance, /openspec update/);
-  assert.match(checklist, /bundled.*\.agents\/skills\/openspec-\*/s);
-  assert.match(checklist, /OpenSpec 1\.13\.1/);
+  assert.match(checklist, /\.agents\/skills\/openspec-\*/s);
+  assert.match(checklist, /latest stable/);
   assert.match(guidance, /openspec doctor --json/);
-  assert.match(guidance, /generatedBy.*1\.13\.1/is);
+  assert.match(guidance, /generatedBy.*CLI version/is);
   assert.match(guidance, /\$openspec-\*/);
   assert.match(guidance, /reopen Codex/i);
 });
@@ -39,6 +39,6 @@ test("keeps OpenSpec skill folders discoverable by Codex", async () => {
     const frontmatterName = skill.match(/^name:\s*(.+)$/m)?.[1]?.trim();
     assert.equal(frontmatterName, directory.name);
     const generatedBy = skill.match(/^\s+generatedBy:\s*["']?([^"'\s]+)["']?$/m)?.[1];
-    assert.equal(generatedBy, "1.13.1");
+    assert.equal(generatedBy, "1.14.0");
   }
 });

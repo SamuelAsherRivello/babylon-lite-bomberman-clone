@@ -1,8 +1,24 @@
 schema: spec-driven
 context: |
-  Repository: project-name.
-  This repository starts as a reusable template with no application
-  implementation, product decisions, or approved technology stack.
+  Repository: SamuelAsherRivello/babylon-lite-bomberman-clone.
+  Purpose: original SNES-inspired 2D competitive Bomberman Clone for 2–4
+  online players, delivered as a public multiplayer demo linked from README.
+  Verified baseline: React/Vite ESM, npm root, application under project-name/;
+  no game renderer or networking is installed yet. Selected stack: Babylon
+  Lite/WebGPU and Colyseus; preserve template corner UI roles and application root.
+  Runtime targets: desktop and mobile WebGPU browsers with keyboard and touch.
+  Deployment: existing GitHub Pages workflow for the client; shared server at
+  SamuelAsherRivello/rmc-colyseus-multiplayer-server, whose hosting and release
+  configuration must be verified during multiplayer exploration.
+  Dependencies: add only required packages, verify compatible pinned renderer
+  and networking APIs against actual source; never substitute full Babylon.js.
+  Security: authoritative server validates gameplay inputs, no browser secrets,
+  bounded room/reconnection state, preserve unrelated work and existing games.
+  Verified commands: npm ci, npm test, npm run build, npm run dev, npm run preview.
+  OpenSpec CLI 1.14.0 and doctor verified healthy. Implement three sequential
+  changes: Foundation, Multiplayer Setup, Gameplay Polish; finish, verify,
+  sync and archive each before proposing the next. Planning requests alone
+  do not authorize implementation. No pull requests unless explicitly requested.
   Canonical project documentation assets live in project-name/documentation/.
   Before proposing or applying a change, record the project's verified purpose,
   runtime targets, architecture, dependency policy, security constraints, and
