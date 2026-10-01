@@ -13,6 +13,13 @@ context: |
   SamuelAsherRivello/rmc-colyseus-multiplayer-server. Backend release v0.9.2
   passed deployment and existing-game live checks. Vercel has a
   300-second connection lifetime; full-match hosting continuity remains to resolve.
+  Foundation and Multiplayer Setup are verified, synced, archived and pushed.
+  Public Pages client and compatible canonical backend v0.9.3 passed two-browser
+  round/reconnect checks. Gameplay Polish remains: power-ups, sudden death,
+  first-to-three matches/rematches, animated original art, original music/effects,
+  mute checkbox, volume and URL mute, final full-loop delivery and hosting continuity.
+  Updated template 6a6b7d1 was reconciled after checkpoint 88b39a5. Preserve
+  latest-stable CLI 1.14.0 and the user's explicit music requirement as overrides.
   Dependencies: add only required packages, verify compatible pinned renderer
   and networking APIs against actual source; never substitute full Babylon.js.
   Security: authoritative server validates gameplay inputs, no browser secrets,

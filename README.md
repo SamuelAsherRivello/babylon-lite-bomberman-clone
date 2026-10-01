@@ -4,6 +4,10 @@
 
 An original SNES-inspired 2D bomb arena built with Babylon Lite and authoritative competitive Colyseus multiplayer.
 
+[**Play the latest multiplayer WIP playtest**](https://samuelasherrivello.github.io/babylon-lite-bomberman-clone/?mode=online)
+
+Create a room and share its code or copied room link with a friend. Requires a WebGPU-capable browser; two to four players. This is a work-in-progress build, published for playtesting. The server has a five-minute session limit; if the room expires or recovery fails, create a new room. The limit is accepted for this project.
+
 ## Original AI Prompt
 
 <details>
@@ -58,11 +62,11 @@ Prompt links: [Multiplayer server](https://github.com/SamuelAsherRivello/rmc-col
 
 This earliest request asked to adapt the supplied Gungeon template into a SNES-inspired Bomberman game. The [approved Bomberman brief](project-name/documentation/approved-game-brief.txt) records the subsequent requirements used for implementation, including the three OpenSpec milestones.
 
-![Foundation practice arena](project-name/documentation/foundation-desktop.png)
+![Work-in-progress multiplayer match](project-name/documentation/multiplayer-match.png)
 
 ## Current status
 
-Foundation and Multiplayer Setup are complete and archived after public two-browser verification. Private rooms, readiness, colors, authoritative battles, local prediction, remote interpolation and reconnect handling are playable in the [multiplayer milestone preview](https://samuelasherrivello.github.io/babylon-lite-bomberman-clone/?mode=online). Complete first-to-three matches, power-ups, sudden death, rematches, audio and final public delivery remain in Gameplay Polish. This is not yet the completed game.
+Foundation and Multiplayer Setup are complete and archived. The latest WIP adds power-ups, sudden death, first-to-three matches, automatic rounds, rematches, animated original artwork, music/effects, mute and volume, and smoother local/remote movement. Gameplay Polish remains active for final verification and documentation. The screenshots show local playtest evidence; this publication is not a final acceptance claim.
 
 ## Getting Started
 
@@ -82,9 +86,9 @@ WASD or arrow keys move; Space places a bomb. Touch devices have direction and b
 
 ### Online play
 
-Choose **Play online**, create a room and share its six-character code. Friends enter the code and join, then everyone chooses a color and readies up. Two to four connected players can start. Eliminated players and mid-round arrivals spectate; the round winner gains one point. The current milestone returns to a ready lobby after each round.
+Choose **Play online**, create a room and share its six-character code or use **Copy room link**. Friends join, then everyone chooses a color and readies up. Two to four connected players can start. Eliminated players and mid-round arrivals spectate. Each round winner gains one point; rounds advance automatically, upgrades reset, and the first to three wins the match. Everyone readies again for a rematch.
 
-Online settings and focus loss stop your input while the shared battle continues. A disconnected character remains vulnerable, with its seat reserved for 15 seconds. Recovery preserves identity and score when the room still exists; expired rooms offer recreation. Local practice is available independently of the backend.
+Online settings and focus loss stop your input while the shared battle continues. A disconnected character remains vulnerable, with its seat reserved for 15 seconds. Recovery can preserve identity and score while the same room survives. The accepted five-minute host limit and process resets can end a room; use **Create room** to play again. Local practice works independently of the backend. Settings control original music/effects with mute and volume; add `mute=1` to the URL for forced silent testing. [Audio provenance](project-name/documentation/audio.md).
 
 The client pins the shared release package and defaults to `https://rmc-colyseus-multiplayer-server.vercel.app`. For local server testing, set `VITE_MULTIPLAYER_SERVER` to your server URL before starting Vite. This is a public endpoint setting, not a secret. See [multiplayer verification and hosting limits](project-name/documentation/multiplayer-verification.md).
 

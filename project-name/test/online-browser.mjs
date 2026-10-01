@@ -6,28 +6,28 @@ import { MultiplayerClient } from '@rmc/multiplayer-client';
 const url=process.env.GAME_URL||'http://127.0.0.1:5173/babylon-lite-bomberman-clone/';
 const browser=await chromium.launch({channel:'chrome',headless:true,args:['--enable-unsafe-webgpu']});
 const pages=[],errors=[];
-let observer;
+let observer,touchObserver;
 async function until(fn,label,timeout=10000){const end=Date.now()+timeout;while(!fn()){if(Date.now()>end)throw Error(label);await new Promise(resolve=>setTimeout(resolve,30));}}
 async function page(options={}){
  const context=await browser.newContext({viewport:{width:1280,height:900},...options});const p=await context.newPage();pages.push(p);
  p.on('console',message=>{const text=message.text();if(/min uptime|No more retries|Network offline|will retry|reconnection successful/.test(text))console.log(text);});
- p.on('pageerror',e=>errors.push(e.message));await p.goto(url);await p.getByRole('button',{name:'Play online',exact:true}).click();await checkLayout(p);return p;
+ p.on('pageerror',e=>errors.push(e.message));const target=new URL(url);target.searchParams.set('mute','1');await p.goto(target.href);if(target.searchParams.get('mode')!=='online')await p.getByRole('button',{name:'Play online',exact:true}).click();else await p.getByRole('heading',{name:'Battle with friends'}).waitFor();await checkLayout(p);return p;
 }
 async function checkLayout(p){
  const fit=await p.evaluate(()=>{
   const box=document.querySelector('#viewport').getBoundingClientRect(),canvas=document.querySelector('canvas').getBoundingClientRect();
   const corners=[...document.querySelectorAll('#ui_layer .corner')].map(n=>n.getBoundingClientRect());
-  const touch=document.querySelector('.touch-controls'),touchBox=touch.getBoundingClientRect();
+ const touch=document.querySelector('.touch-controls'),touchBox=touch?.getBoundingClientRect();
   return {ratio:box.width/box.height,gutters:document.querySelectorAll('.gutter').length,
    canvasFits:canvas.height>0&&canvas.top>=box.top&&canvas.bottom<=box.bottom,
    cornersFit:corners.length===4&&corners.every(n=>n.left>=box.left&&n.right<=box.right&&n.top>=box.top&&n.bottom<=box.bottom),
-   touchFits:getComputedStyle(touch).display==='none'||(touchBox.top>=canvas.bottom&&touchBox.bottom<=box.bottom)};
+   touchFits:!touch||getComputedStyle(touch).display==='none'||(touchBox.top>=canvas.bottom&&touchBox.bottom<=box.bottom)};
  });
  assert.ok(Math.abs(fit.ratio-320/272)<.001,'one fixed landscape ratio at every browser size');
  assert.equal(fit.gutters,4);assert.ok(fit.canvasFits&&fit.cornersFit&&fit.touchFits,'arena and primary controls fit within viewport');
 }
 async function mintPosition(p){
- const screenshot=await p.screenshot();return p.evaluate(async bytes=>{
+ const screenshot=await p.locator('canvas').screenshot();return p.evaluate(async bytes=>{
   const image=await createImageBitmap(new Blob([new Uint8Array(bytes)],{type:'image/png'}));
   const c=new OffscreenCanvas(image.width,image.height),ctx=c.getContext('2d');ctx.drawImage(image,0,0);
   const pixels=ctx.getImageData(0,0,c.width,c.height).data;let x=0,y=0,n=0;
@@ -39,6 +39,8 @@ try {
  const a=await page(),b=await page();
  await a.getByRole('button',{name:'Create room',exact:true}).click();const heading=a.getByRole('heading',{name:/^Room [A-Z0-9]{6}$/});await heading.waitFor({timeout:30000});const code=(await heading.innerText()).split(' ')[1];
  await b.getByLabel('Room code').fill(code);await b.getByRole('button',{name:'Join room',exact:true}).click();await b.getByRole('heading',{name:`Room ${code}`}).waitFor({timeout:30000});
+ await a.context().grantPermissions(['clipboard-read','clipboard-write']);await a.getByRole('button',{name:'Copy room link',exact:true}).click();await a.getByText('Room link copied.',{exact:true}).waitFor();
+ const invite=new URL(await a.evaluate(()=>navigator.clipboard.readText()));assert.equal(invite.searchParams.get('room'),code);assert.equal(invite.searchParams.get('mode'),'online');
  await a.getByRole('button',{name:'Violet',exact:true}).click();await a.getByText('Player 1 · Violet').waitFor();await a.getByRole('button',{name:'Mint',exact:true}).click();await a.getByText('Player 1 · Mint').waitFor();assert.equal(await b.getByRole('button',{name:'Mint',exact:true}).isDisabled(),true,'occupied colors cannot be selected');
  await a.getByRole('button',{name:'Ready up',exact:true}).click();await b.getByRole('button',{name:'Ready up',exact:true}).click();for(const p of[a,b])await p.getByText(/s · ALIVE/).waitFor({timeout:10000});
  observer=new MultiplayerClient(process.env.BACKEND_URL||'https://rmc-colyseus-multiplayer-server.vercel.app','bomberman',{code});void observer.connect();await until(()=>observer.state.status==='connected','spectator admission');const first=observer.state.gameState.people.find(p=>p.number===0);assert.ok(!observer.state.gameState.players.some(p=>p.id===observer.state.sessionId),'late observer spectates');
@@ -50,19 +52,72 @@ try {
  await a.keyboard.down('ArrowDown');await a.waitForTimeout(100);await a.getByRole('button',{name:'Settings'}).click();await a.waitForTimeout(400);
  const stopped=structuredClone(observer.state.gameState.players.find(p=>p.id===first.id));await a.waitForTimeout(350);const still=observer.state.gameState.players.find(p=>p.id===first.id);assert.ok(Math.hypot(still.x-stopped.x,still.y-stopped.y)<.01,'settings neutralizes held movement while shared server continues');
  await a.getByRole('button',{name:'Resume',exact:true}).click();await a.keyboard.up('ArrowDown');
- await a.keyboard.press('Space');await until(()=>observer.state.gameState.bombs.some(b=>b.owner===first.id),'server confirms bomb placement');for(const p of[a,b])await p.getByRole('heading',{name:'Player 2 wins!'}).waitFor({timeout:8000});
+ await a.evaluate(()=>window.restoreTransport());await a.waitForTimeout(350);
+ const actorState=()=>observer.state.gameState.players.find(p=>p.id===first.id);
+ await a.keyboard.down('ArrowRight');await a.waitForTimeout(100);await a.evaluate(()=>window.dispatchEvent(new Event('blur')));await a.waitForTimeout(350);
+ const blurredX=actorState().x;await a.waitForTimeout(250);assert.ok(Math.abs(actorState().x-blurredX)<.01,'simulated focus loss clears held movement');await a.keyboard.up('ArrowRight');
+ async function walk(axis,target){
+  const start=actorState()[axis];if(Math.abs(start-target)<.15)return;
+  const positive=target>start,key=axis==='x'?(positive?'ArrowRight':'ArrowLeft'):(positive?'ArrowDown':'ArrowUp');
+  await a.keyboard.down(key);try{await until(()=>positive?actorState()[axis]>=target-.08:actorState()[axis]<=target+.08,`walk ${axis} to ${target}`,5000);}finally{await a.keyboard.up(key);}await a.waitForTimeout(120);
+ }
+ // Legal keyboard actions reveal and collect the first seeded bomb-slot item,
+ // then place two bombs with unequal deadlines and verify a real chain.
+ await walk('y',1.5);await walk('x',3.5);await a.keyboard.press('Space');
+ await until(()=>observer.state.gameState.bombs.some(b=>b.owner===first.id),'upgrade excavation bomb');
+ await walk('x',1.5);await walk('y',2.5);
+ await until(()=>observer.state.gameState.powerups.some(item=>item.cell===19&&item.type==='bomb'),'hidden bomb upgrade reveals after flames',7000);
+ await walk('y',1.5);await walk('x',4.5);await until(()=>actorState().capacity===2,'server confirms collected bomb slot');
+ await a.keyboard.press('Space');await until(()=>observer.state.gameState.bombs.some(b=>b.owner===first.id),'first chain bomb');
+ await a.waitForTimeout(400);await walk('x',3.5);await a.keyboard.press('Space');
+ await until(()=>observer.state.gameState.bombs.filter(b=>b.owner===first.id).length===2,'upgraded capacity allows two simultaneous bombs');
+ const chain=observer.state.gameState.bombs.filter(b=>b.owner===first.id).map(b=>({id:b.id,deadline:b.deadline}));
+ assert.notEqual(chain[0].deadline,chain[1].deadline,'the later bomb has a different natural fuse deadline');
+ await walk('x',1.5);await walk('y',2.5);
+ await until(()=>chain.every(b=>observer.state.gameState.blasts.some(blast=>blast.id===b.id)),'earlier bomb chains the later bomb',5000);
+ const chainBlasts=observer.state.gameState.blasts.filter(blast=>chain.some(b=>b.id===blast.id));
+ assert.equal(chainBlasts[0].until,chainBlasts[1].until,'chain explosions resolve on the same authoritative tick');
+ assert.ok(actorState().alive,'escaping keyboard-controlled player survives both blasts');
+ await until(()=>observer.state.gameState.blasts.length===0,'chain flames clear',3000);
+ await a.keyboard.press('Space');await until(()=>observer.state.gameState.bombs.some(b=>b.owner===first.id),'server confirms bomb placement');for(const p of[a,b])await p.getByRole('heading',{name:'Amber wins!'}).waitFor({timeout:8000});
  await a.screenshot({path:'project-name/documentation/multiplayer-round.png'});
  await a.evaluate(()=>window.restoreTransport());await a.waitForTimeout(300);
  // Real network loss, then recovery before the reserved-seat deadline.
- await a.context().setOffline(true);await a.waitForTimeout(1200);await a.context().setOffline(false);await a.getByRole('heading',{name:`Room ${code}`}).waitFor({timeout:15000});
+ await a.context().setOffline(true);await a.waitForTimeout(1200);await a.context().setOffline(false);await a.getByText(/s · ALIVE/).waitFor({timeout:15000});
  assert.ok(observer.state.gameState.people.some(p=>p.id===first.id),'recovery preserved the original identity');
- await a.getByText(/Player 1 · Mint/).waitFor();await a.getByText(/Player 2 · Amber.*1 wins/).waitFor();
- const mobile=await page({viewport:{width:390,height:844},deviceScaleFactor:1.5,isMobile:true,hasTouch:true});await mobile.getByLabel('Room code').fill(code);await mobile.getByRole('button',{name:'Join room',exact:true}).click();await mobile.getByRole('heading',{name:`Room ${code}`}).waitFor({timeout:30000});await mobile.screenshot({path:'project-name/documentation/multiplayer-mobile.png'});
+ await a.locator('.scoreboard').getByText(/Amber 1\/3/).waitFor();
+ for(let round=2;round<=3;round++){
+  await until(()=>observer.state.gameState.phase==='playing'&&observer.state.gameState.round===round,`round ${round} advances automatically`,15000);
+  await a.keyboard.press('Space');observer.send('input',{seq:round,x:0,y:0,bomb:true});
+  await until(()=>observer.state.gameState.people.find(p=>p.number===1)?.score===round,`round ${round} has one common winner`,10000);
+ }
+ for(const p of[a,b])await p.getByRole('heading',{name:'Amber takes the match!'}).waitFor();
+ await a.screenshot({path:'project-name/documentation/multiplayer-match.png'});
+ await a.getByRole('button',{name:'Ready for rematch',exact:true}).click();
+ await a.waitForTimeout(200);assert.equal(observer.state.gameState.phase,'matchResults','one vote cannot restart the match');
+ await b.getByRole('button',{name:'Ready for rematch',exact:true}).click();observer.send('rematch');
+ await until(()=>observer.state.gameState.phase==='playing'&&observer.state.gameState.match===2,'fresh rematch starts',15000);
+ assert.ok(observer.state.gameState.people.every(p=>p.score===0));assert.ok(observer.state.gameState.players.every(p=>p.capacity===1&&p.range===2&&p.speedLevel===0));
+ const mobile=await page({viewport:{width:390,height:844},deviceScaleFactor:1.5,isMobile:true,hasTouch:true});await mobile.getByLabel('Room code').fill(code);await mobile.getByRole('button',{name:'Join room',exact:true}).click();await mobile.getByText(/s · SPECTATING/).waitFor({timeout:30000});await checkLayout(mobile);await mobile.screenshot({path:'project-name/documentation/multiplayer-mobile.png'});
  const extra=await page();await extra.getByLabel('Room code').fill(code);await extra.getByRole('button',{name:'Join room',exact:true}).click();await extra.getByText('This room is full. Try again when someone leaves.').waitFor({timeout:20000});
  await extra.getByLabel('Room code').fill('BAD000');await extra.getByRole('button',{name:'Join room',exact:true}).click();await extra.getByText('Room expired or code not found. Create a new room.').waitFor({timeout:20000});
  await extra.getByRole('button',{name:'Create room',exact:true}).click();const isolated=extra.getByRole('heading',{name:/^Room [A-Z0-9]{6}$/});await isolated.waitFor({timeout:20000});assert.notEqual(await isolated.innerText(),`Room ${code}`,'new room is isolated');
- assert.deepEqual(errors,[]);console.log('PASS: two-browser lobby/battle, immediate movement with 180–240ms latency/jitter, converged remote motion, common winner, brief offline recovery, mobile join and no page errors.');
+ const touchCode=(await isolated.innerText()).split(' ')[1];
+ await mobile.getByRole('button',{name:'Local practice',exact:true}).click();await mobile.getByRole('button',{name:'Play online',exact:true}).click();
+ await mobile.getByLabel('Room code').fill(touchCode);await mobile.getByRole('button',{name:'Join room',exact:true}).click();await mobile.getByRole('heading',{name:`Room ${touchCode}`}).waitFor();
+ await extra.getByRole('button',{name:'Ready up',exact:true}).click();await mobile.getByRole('button',{name:'Ready up',exact:true}).click();await mobile.getByText(/s · ALIVE/).waitFor({timeout:10000});await checkLayout(mobile);
+ touchObserver=new MultiplayerClient(process.env.BACKEND_URL||'https://rmc-colyseus-multiplayer-server.vercel.app','bomberman',{code:touchCode});void touchObserver.connect();await until(()=>touchObserver.state.status==='connected','touch verification observer');
+ const mobileId=touchObserver.state.gameState.people.find(p=>p.number===1).id;
+ const left=await mobile.getByRole('button',{name:'←',exact:true}).boundingBox(),bomb=await mobile.getByRole('button',{name:'BOMB',exact:true}).boundingBox();
+ const touchSession=await mobile.context().newCDPSession(mobile),startX=touchObserver.state.gameState.players.find(p=>p.id===mobileId).x;
+ await touchSession.send('Input.dispatchTouchEvent',{type:'touchStart',touchPoints:[{id:11,x:left.x+left.width/2,y:left.y+left.height/2},{id:12,x:bomb.x+bomb.width/2,y:bomb.y+bomb.height/2}]});
+ await until(()=>touchObserver.state.gameState.bombs.some(b=>b.owner===mobileId)&&touchObserver.state.gameState.players.find(p=>p.id===mobileId).x<startX-.15,'simultaneous touch movement and bomb');
+ await touchSession.send('Input.dispatchTouchEvent',{type:'touchCancel',touchPoints:[]});await mobile.waitForTimeout(400);
+ const stoppedTouch=touchObserver.state.gameState.players.find(p=>p.id===mobileId).x;await mobile.waitForTimeout(250);assert.ok(Math.abs(touchObserver.state.gameState.players.find(p=>p.id===mobileId).x-stoppedTouch)<.01,'touch cancellation clears held movement');
+ await mobile.screenshot({path:'project-name/documentation/multiplayer-mobile.png'});
+ assert.deepEqual(errors,[]);console.log('PASS: two-browser complete first-to-three and fresh rematch, immediate movement with 180–240ms latency/jitter, converged remote motion, legal keyboard pickup and chain, common winner, offline recovery, simultaneous mobile movement/bomb and cancellation, full-room/invalid-code/isolation and no page errors.');
 } catch(error){
- for(let n=0;n<pages.length;n++){console.error(`Browser ${n+1}:`,(await pages[n].locator('body').innerText()).slice(0,900));await pages[n].screenshot({path:`.tmp/online-failure-${n+1}.png`});}
+ console.error('Original browser failure:',error);
+ for(let n=0;n<pages.length;n++){try{console.error(`Browser ${n+1}:`,(await pages[n].locator('body').innerText({timeout:1000})).slice(0,900));await pages[n].screenshot({path:`.tmp/online-failure-${n+1}.png`,timeout:3000});}catch(diagnostic){console.error(`Browser ${n+1} diagnostic unavailable:`,diagnostic.message);}}
  throw error;
-} finally {observer?.disconnect();await browser.close();}
+} finally {observer?.disconnect();touchObserver?.disconnect();await browser.close();}

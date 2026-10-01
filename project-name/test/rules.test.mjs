@@ -42,3 +42,67 @@ test('same seeded input stream produces identical outcomes', () => {
   for(let n=0;n<240;n++){const input={a:{x:n<60?1:0,bomb:n===80}};stepGame(a,input);stepGame(b,input);}
   assert.deepEqual(a,b);
 });
+
+test('all four starts have mirrored blocks and hidden upgrade opportunities', () => {
+  for (const seed of [1, 2, 42, 123456]) {
+    const g = createGame(['a', 'b', 'c', 'd'], seed);
+    for (let y = 0; y < 13; y++) for (let x = 0; x < 15; x++) {
+      for (const opposite of [index(14-x,y), index(x,12-y)]) {
+        assert.equal(g.board[index(x,y)], g.board[opposite]);
+        assert.equal(g.hidden[index(x,y)], g.hidden[opposite]);
+      }
+    }
+    assert.deepEqual(new Set(g.hidden.filter(Boolean)), new Set(['bomb','range','speed']));
+    for (const p of g.players) {
+      const x=Math.floor(p.x),y=Math.floor(p.y);
+      const exits=[[x===1?1:-1,0],[0,y===1?1:-1]];
+      for (const [dx,dy] of exits) for(let n=0;n<=2;n++) assert.equal(g.board[index(x+dx*n,y+dy*n)],0);
+    }
+  }
+});
+
+test('hidden upgrade waits for all blasts, then later explosions destroy exposed items',()=>{
+  const g=createGame(),p=g.players[0],cell=index(5,3);g.board.fill(0);g.hidden.fill(null);
+  g.board[cell]=2;g.hidden[cell]='range';p.x=3.5;p.y=3.5;placeBomb(g,p);g.bombs[0].deadline=1;p.x=10.5;p.y=10.5;
+  stepGame(g);assert.equal(g.board[cell],0);assert.equal(g.powerups.length,0);assert.deepEqual(g.pendingPowerups,[{cell,type:'range'}]);
+  g.blasts.push({id:99,cells:[cell],until:40});advance(g,38);assert.equal(g.powerups.length,0);
+  stepGame(g);assert.deepEqual(g.powerups,[{cell,type:'range'}]);
+  p.x=3.5;p.y=3.5;placeBomb(g,p);g.bombs[0].deadline=g.tick+1;p.x=10.5;p.y=10.5;
+  stepGame(g);assert.equal(g.powerups.length,0);assert.equal(p.range,2);
+});
+
+test('collection caps stats, exact bomb capacity, eliminated rejection and fresh reset',()=>{
+  const g=createGame(),p=g.players[0];g.board.fill(0);
+  for(const type of ['bomb','range','speed'])for(let i=0;i<12;i++){
+    g.powerups=[{cell:index(1,1),type}];stepGame(g);
+  }
+  assert.equal(p.capacity,5);assert.equal(p.range,8);assert.equal(p.speedLevel,3);assert.equal(p.speed,3*(1+.15*3));
+  for(let n=0;n<5;n++){p.x=1.5+n;p.y=1.5;assert.equal(placeBomb(g,p),true);}
+  p.x=7.5;assert.equal(placeBomb(g,p),false);
+  p.alive=false;g.powerups=[{cell:index(7,1),type:'bomb'}];stepGame(g);assert.equal(g.powerups.length,1);
+  const fresh=createGame();assert.equal(fresh.players[0].capacity,1);assert.equal(fresh.players[0].range,2);assert.equal(fresh.players[0].speed,3);assert.equal(fresh.powerups.length,0);assert.equal(fresh.bombs.length,0);
+});
+
+test('walls warn for one second, close symmetrically and crush all occupants together',()=>{
+  const g=createGame(['a','b']);g.tick=5399;stepGame(g);
+  assert.equal(g.warnings.length,1);assert.equal(g.warnings[0].closeTick-g.tick,60);
+  const cells=g.warnings[0].cells;advance(g,59);assert.equal(g.board[cells[0]],0);assert.ok(g.players.every(p=>p.alive));
+  stepGame(g);assert.ok(cells.every(cell=>g.board[cell]===1));assert.ok(g.players.every(p=>!p.alive));
+  assert.equal(g.events.filter(e=>e.type==='elimination').length,2);
+});
+
+test('warned tile can be escaped and closed wall blocks movement permanently',()=>{
+  const g=createGame();g.tick=5399;stepGame(g);advance(g,30,{practice:{x:1}});advance(g,30);
+  assert.equal(g.players[0].alive,true);assert.equal(g.board[index(1,1)],1);
+  // Another warning is already approaching; verify the first wall in isolation.
+  g.waves=[];const x=g.players[0].x;advance(g,60,{practice:{x:-1}});
+  assert.ok(g.players[0].x>=2.28);assert.ok(g.players[0].x<=x);
+});
+
+test('inward wall schedule is deterministic, unique and fits the final thirty seconds',()=>{
+  const g=createGame(),closed=g.waves.flatMap(w=>w.cells);
+  assert.equal(new Set(closed).size,closed.length);
+  assert.equal(closed.length,g.board.filter((value,i)=>value!==1&&i>=15&&i<180).length);
+  assert.equal(g.waves[0].warnTick,5400);assert.ok(g.waves.at(-1).closeTick<7200);
+  assert.deepEqual(g.waves,createGame().waves);
+});

@@ -6,6 +6,18 @@ test('prediction responds immediately and does not mutate authoritative outcomes
  const state={...createGame(['a','b']),phase:'playing',round:1};const original=structuredClone(state);
  const player=predictMovement(state,'a',{x:1,y:0});assert.ok(player.x>state.players[0].x);assert.deepEqual(state,original);
 });
+
+test('authoritative speed upgrades predict immediately while closed walls and pickup authority stay intact',()=>{
+ const state={...createGame(['a','b']),phase:'playing',round:1};
+ const base=predictMovement(state,'a',{x:1,y:0});
+ state.players[0].speed=4.35;state.players[0].speedLevel=3;
+ state.powerups=[{cell:16,type:'bomb'}];const original=structuredClone(state);
+ const fast=predictMovement(state,'a',{x:1,y:0});
+ assert.ok(Math.abs((fast.x-state.players[0].x)/(base.x-state.players[0].x)-1.45)<1e-9);
+ assert.deepEqual(state,original,'prediction cannot grant an unconfirmed pickup');
+ state.board[17]=1;state.players[0].x=1.72;
+ assert.equal(predictMovement(state,'a',{x:1,y:0}).x,1.72,'closed sudden-death walls constrain prediction');
+});
 test('cosmetic bomb feedback clears on rejection acknowledgement and round reset',()=>{
  const state={...createGame(['a','b']),phase:'playing',round:1};state.players[0].ack=-1;
  const view=new ReconciledView();view.accept(state,'a');view.advance('a',{x:0,y:0,bomb:true},1);
