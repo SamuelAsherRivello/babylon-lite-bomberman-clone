@@ -5,7 +5,7 @@ context: |
   online players, delivered as a public multiplayer demo linked from README.
   Verified baseline: React/Vite ESM, npm root, application under project-name/;
   Babylon Lite 1.32.0/WebGPU renderer and released Colyseus shared client
-  v0.9.4 are installed for the latest WIP. Preserve template corner UI roles and application root.
+  v0.9.4 are installed for released game v0.0.4. Preserve template corner UI roles and application root.
   Landscape-only viewport, four gutters, nearest-sampled 16px original tiles,
   precise simulation/prediction coordinates and CSS-resolution React UI.
   Runtime targets: desktop and mobile WebGPU browsers with keyboard and touch.
@@ -13,11 +13,15 @@ context: |
   SamuelAsherRivello/rmc-colyseus-multiplayer-server. Backend release v0.9.2
   passed deployment and existing-game live checks. Vercel has a
   300-second connection lifetime, explicitly accepted by the user. Preserve it and disclose expiry.
-  Foundation and Multiplayer Setup are verified, synced, archived and pushed.
+  All three milestones are verified, synced and archived.
   Public Pages client and compatible canonical backend v0.9.3 passed two-browser
   round/reconnect checks. Gameplay Polish remains: power-ups, sudden death,
   first-to-three matches/rematches, animated original art, original music/effects,
-  mute checkbox, volume and URL mute are implemented. Final public verification remains.
+  mute checkbox, volume and URL mute are implemented. Public v0.0.4 full match/rematch,
+  pickup/chain, latency/jitter, recovery and mobile checks passed. A real-time local
+  two-browser sudden-death draw passed. Current server typecheck and 67 regressions pass.
+  In-memory hosting can lose admission/recovery before five minutes; disclose this
+  observed limitation and new-room guidance rather than promising durable rooms.
   Updated template 6a6b7d1 was reconciled after checkpoint 88b39a5. Preserve
   latest-stable CLI 1.14.0 and the user's explicit music requirement as overrides.
   Dependencies: add only required packages, verify compatible pinned renderer

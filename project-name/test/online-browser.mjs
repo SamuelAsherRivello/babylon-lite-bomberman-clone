@@ -14,8 +14,11 @@ async function until(fn,label,timeout=10000){const end=Date.now()+timeout;while(
 function inputPacket(bytes){try{const it={offset:1},buffer=new Uint8Array(bytes);if(buffer[0]!==Protocol.ROOM_DATA||!decode.stringCheck(buffer,it)||decode.string(buffer,it)!=='input')return null;return unpack(buffer.subarray(it.offset));}catch{return null;}}
 async function page(options={}){
  const context=await browser.newContext({viewport:{width:1280,height:900},...options});const p=await context.newPage();pages.push(p);
- p.on('console',message=>{const text=message.text();if(/min uptime|No more retries|Network offline|will retry|reconnection successful/.test(text))console.log(text);});
- p.on('pageerror',e=>errors.push(e.message));const target=new URL(url);target.searchParams.set('mute','1');await p.goto(target.href);if(target.searchParams.get('mode')!=='online')await p.getByRole('button',{name:'Play online',exact:true}).click();else await p.getByRole('heading',{name:'Battle with friends'}).waitFor();await checkLayout(p);return p;
+ p.on('console',message=>{const text=message.text();if(/Socket closed:|min uptime|No more retries|Network offline|will retry|reconnection successful/.test(text))console.log(text);});
+ await p.addInitScript(()=>{const Socket=window.WebSocket;window.WebSocket=new Proxy(Socket,{construct(Target,args){const socket=new Target(...args);socket.addEventListener('close',event=>console.info('Socket closed:',event.code,event.reason));return socket;}});});
+ p.on('pageerror',e=>errors.push(e.message));const target=new URL(url);target.searchParams.set('mute','1');await p.goto(target.href);if(target.searchParams.get('mode')!=='online')await p.getByRole('button',{name:'Play online',exact:true}).click();else await p.getByRole('heading',{name:'Battle with friends'}).waitFor();await checkLayout(p);
+ if(process.env.EXPECTED_VERSION)assert.ok((await p.locator('footer.corner_bottom_right').innerText()).includes(`v${process.env.EXPECTED_VERSION}`),'browser displays the expected deployed release');
+ return p;
 }
 async function checkLayout(p){
  const fit=await p.evaluate(()=>{
@@ -68,22 +71,27 @@ try {
   const positive=target>start,key=axis==='x'?(positive?'ArrowRight':'ArrowLeft'):(positive?'ArrowDown':'ArrowUp');
   await a.keyboard.down(key);try{await until(()=>positive?actorState()[axis]>=target-.08:actorState()[axis]<=target+.08,`walk ${axis} to ${target}`,5000);}finally{await a.keyboard.up(key);}await a.waitForTimeout(50);
  }
+ async function center(axis,target){
+  await a.waitForTimeout(600);
+  for(let n=0;n<12&&Math.abs(actorState()[axis]-target)>.12;n++){
+   const delta=target-actorState()[axis],key=axis==='x'?(delta>0?'ArrowRight':'ArrowLeft'):(delta>0?'ArrowDown':'ArrowUp');
+   await a.keyboard.down(key);await a.waitForTimeout(Math.min(100,Math.abs(delta)/actorState().speed*1000));await a.keyboard.up(key);await a.waitForTimeout(600);
+  }
+  assert.ok(Math.abs(actorState()[axis]-target)<.2,`center ${axis} at ${target}`);
+ }
  // Legal keyboard actions reveal and collect the first seeded bomb-slot item,
  // then place two bombs with unequal deadlines and verify a real chain.
- await walk('y',1.5);await walk('x',3.5);await a.keyboard.press('Space');
+ await walk('y',1.5);await walk('x',3.5);await center('x',3.5);await center('y',1.5);await a.keyboard.press('Space');
  await until(()=>observer.state.gameState.bombs.some(b=>b.owner===first.id),'upgrade excavation bomb');
+ const excavation=observer.state.gameState.bombs.find(b=>b.owner===first.id);console.log('Excavation bomb',JSON.stringify(excavation));assert.deepEqual([excavation.x,excavation.y],[3,1],'excavation opens the escape corridor');
  await walk('x',1.5);await walk('y',2.5);
  await until(()=>observer.state.gameState.powerups.some(item=>item.cell===19&&item.type==='bomb'),'hidden bomb upgrade reveals after flames',7000);
+ assert.equal(observer.state.gameState.board[33],0,'excavation clears tile 3,2 before the chain escape');
  await walk('y',1.5);await walk('x',4.5);await until(()=>actorState().capacity===2,'server confirms collected bomb slot');
  // Feedback-controlled walking can overshoot by a network round trip. Settle
  // before the fuse starts, then use ordered, timed keyboard commands at the
  // authoritative base speed, rather than chasing delayed position snapshots.
- await a.waitForTimeout(600);
- for(let n=0;n<12&&Math.abs(actorState().x-4.5)>.12;n++){
-  const delta=4.5-actorState().x,key=delta>0?'ArrowRight':'ArrowLeft';
-  await a.keyboard.down(key);await a.waitForTimeout(Math.min(100,Math.abs(delta)/3*1000));await a.keyboard.up(key);await a.waitForTimeout(600);
- }
- assert.ok(Math.abs(actorState().x-4.5)<.2,'center before chain route');
+ await center('x',4.5);await center('y',1.5);
  async function timedMove(key,ms){await a.keyboard.down(key);await a.waitForTimeout(ms);await a.keyboard.up(key);}
  await a.keyboard.press('Space');
  await timedMove('ArrowLeft',650);await a.keyboard.press('Space');

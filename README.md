@@ -4,9 +4,9 @@
 
 An original SNES-inspired 2D bomb arena built with Babylon Lite and authoritative competitive Colyseus multiplayer.
 
-[**Play the latest multiplayer WIP playtest**](https://samuelasherrivello.github.io/babylon-lite-bomberman-clone/?mode=online)
+[**Play Multiplayer Demo — v0.0.4**](https://samuelasherrivello.github.io/babylon-lite-bomberman-clone/?mode=online)
 
-Create a room and share its code or copied room link with a friend. Requires a WebGPU-capable browser; two to four players. This is a work-in-progress build, published for playtesting. The server has a five-minute session limit; if the room expires or recovery fails, create a new room. The limit is accepted for this project.
+Create a room and share its code or copied room link with a friend. Requires a WebGPU-capable browser; two to four players. The server has an accepted five-minute session limit. In-memory hosting can also interrupt admission or recovery before that limit; if the room expires or recovery fails, create a new room. Host resets do not preserve scores or identity.
 
 ## Original AI Prompt
 
@@ -62,11 +62,11 @@ Prompt links: [Multiplayer server](https://github.com/SamuelAsherRivello/rmc-col
 
 This earliest request asked to adapt the supplied Gungeon template into a SNES-inspired Bomberman game. The [approved Bomberman brief](project-name/documentation/approved-game-brief.txt) records the subsequent requirements used for implementation, including the three OpenSpec milestones.
 
-![Work-in-progress multiplayer match](project-name/documentation/multiplayer-match.png)
+![Multiplayer match result](project-name/documentation/multiplayer-match.png)
 
 ## Current status
 
-Foundation and Multiplayer Setup are complete and archived. The latest WIP adds power-ups, sudden death, first-to-three matches, automatic rounds, rematches, animated original artwork, music/effects, mute and volume, and smoother local/remote movement. Gameplay Polish remains active for final verification and documentation. The screenshots show local playtest evidence; this publication is not a final acceptance claim.
+All three OpenSpec milestones are complete, synced and archived. Gameplay Polish delivers power-ups, sudden death, first-to-three matches, automatic rounds, rematches, animated original artwork, music/effects, mute and volume, and smooth local/remote movement. Public v0.0.4 passed a complete two-browser match/rematch, legal pickups/chains, simulated latency/jitter, recovery and simultaneous touch controls. Screenshots show current public play; the draw screenshot shows a real-time local two-browser check. See the [delivery audit](project-name/documentation/delivery-audit.md) for evidence and disclosed limits.
 
 ## Getting Started
 
@@ -108,17 +108,17 @@ Explore → propose → apply → verify → sync specifications → archive →
 
 ## Final delivery target
 
-The WIP multiplayer link above is live on GitHub Pages and opens the online lobby without installation or credentials. Final acceptance still requires two independent public browsers to complete a first-to-three match and start a rematch using the live shared server. A static build alone does not satisfy delivery.
+The multiplayer link above opens the live online lobby without installation or credentials. Two independent public browsers verified a first-to-three match and fresh rematch, public assets, endpoint connectivity, controls, scoring and displayed v0.0.4.
 
-Client release uses the existing Release GitHub Actions workflow and `version.txt`. Pages deploys `project-name/dist/` under `/babylon-lite-bomberman-clone/`. WIP v0.0.3 was published for immediate playtesting before final acceptance, as requested. Formal release and full-loop verification remain tracked in Gameplay Polish.
+Client release uses the existing Release GitHub Actions workflow and `version.txt`. Run the **Release** workflow, then **Deploy to GitHub Pages** for the generated version commit. Pages deploys `project-name/dist/` under `/babylon-lite-bomberman-clone/`. [Game release v0.0.4](https://github.com/SamuelAsherRivello/babylon-lite-bomberman-clone/releases/tag/v0.0.4) and [pinned shared client v0.9.4](https://github.com/SamuelAsherRivello/rmc-colyseus-multiplayer-server/releases/tag/v0.9.4). WIP v0.0.3 was published immediately for playtesting before final acceptance, as requested.
 
 ## Verification
 
 Twenty-three automated checks cover arena symmetry, upgrades and caps, collision, bomb capacity/fuse, owner passage, chains, sudden death, deterministic outcomes, pause/restart, scaling, immediate prediction, gradual local reconciliation, uniform remote interpolation under uneven snapshot arrival, and rejected cosmetic bombs. Chrome WebGPU checks exercised keyboard movement/bomb escape, elimination, restart, pause/resume, fullscreen, zoom, unsupported-WebGPU recovery, and emulated mobile multitouch/cancellation at DPR 1.5. Physical touch hardware is unverified.
 
-With the application running and Google Chrome installed, `npm run test:browser` exercises independent browser contexts, private rooms, readiness, authoritative elimination, a late spectator, 180–240ms outbound latency/jitter, pixel-level local movement, remote convergence, offline recovery and mobile joining. The default application URL is `http://127.0.0.1:5173/babylon-lite-bomberman-clone/`; set `GAME_URL` to use another local or public URL and `BACKEND_URL` only when the application was built for a different backend. Final online acceptance remains pending.
+With the application running and Google Chrome installed, `npm run test:browser` exercises independent browser contexts, private rooms, readiness, authoritative elimination, a late spectator, 180–240ms outbound latency/jitter, pixel-level local movement, remote convergence, full match/rematch, legal pickup/chain, offline recovery and mobile joining. The default application URL is `http://127.0.0.1:5173/babylon-lite-bomberman-clone/`; set `GAME_URL` to use another local or public URL and `BACKEND_URL` only when the application was built for a different backend.
 
-Additional browser checks: `node project-name/test/graphics-browser.mjs`, `node project-name/test/audio-browser.mjs`, and `node project-name/test/ui-browser.mjs`. They verify actual WebGPU artwork, synthesized audio and gain controls, and viewport/fullscreen/unsupported-browser behavior. Use `GAME_URL` for the running application. Audio automation is verified; physical speaker output is unverified.
+Additional browser checks: `node project-name/test/graphics-browser.mjs`, `node project-name/test/audio-browser.mjs`, `node project-name/test/ui-browser.mjs`, and `node project-name/test/draw-browser.mjs`. They verify actual WebGPU artwork, synthesized audio and gain controls, viewport/fullscreen/unsupported-browser behavior, and a real-time two-browser sudden-death draw with automatic round progression. Draw verification takes approximately 100 seconds. Use `GAME_URL` for the running application and optionally `EXPECTED_VERSION` for the public full-match release check. Audio automation is verified; physical speaker output is unverified.
 
 ## References and credits
 
