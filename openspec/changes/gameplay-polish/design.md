@@ -22,7 +22,7 @@ Goals: extend the same authoritative simulation, finish the approved full loop, 
 
 ## Risks / Trade-offs
 
-- Current maxDuration 300 can interrupt long matches → deployment acceptance is blocked until supported configuration or an authorized persistent host/authoritative durable continuity is verified. Existing host access was requested; no answer or new service authorization is assumed. Gameplay work is independent of this external deployment gate. A read-only hosting capability probe may use existing deployment credentials without logging secrets; do not change billing or unrelated consumers.
+- Current maxDuration 300 can interrupt long matches → the user explicitly accepted the five-minute limit on 2026-10-01. Preserve the configured limit, show expiry/recreation guidance, and verify full matches within it. Do not promise durable rooms or retained identity after host resets. The read-only probe confirmed Hobby/Fluid; do not change billing or unrelated consumers. WIP publication was authorized before further tests, while final acceptance still requires public evidence.
 - More snapshot fields → omit hidden items and redundant schedule data from public state; cap effects and retain the four-player arena.
 - Prediction advances a cloned rule state → expose only predicted position and reconcile all new outcomes with server snapshots.
 - Auto-round flow changes milestone browser expectations → update them to score breaks/next countdown while retaining meaningful movement, identity and outcome assertions.
@@ -30,4 +30,4 @@ Goals: extend the same authoritative simulation, finish the approved full loop, 
 
 ## Migration Plan
 
-Implement and verify shared rules/server first, release with the existing backend workflow, confirm canonical health and live checks, then pin the immutable client artifact. Finish client presentation and verify locally. Resolve the hosting gate, release/deploy the Pages client and prove complete public matches/rematches and a session beyond five minutes. Roll back only through the existing workflow if an actual deployment regression occurs. Sync/archive after every acceptance task passes, then commit/push and fast-forward generated version commits.
+Implement and verify shared rules/server first, release with the existing backend workflow, confirm canonical health and live checks, then pin the immutable client artifact. Finish client presentation and verify locally. Publish the requested WIP immediately, then complete release/deployment and prove public matches/rematches within the accepted five-minute limit. Verify expiry/recreation guidance; do not require rooms to survive beyond that limit. Roll back only through the existing workflow if an actual deployment regression occurs. Sync/archive after every final acceptance task passes, then commit/push and fast-forward generated version commits.

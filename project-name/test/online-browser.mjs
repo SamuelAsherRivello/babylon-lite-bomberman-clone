@@ -1,13 +1,17 @@
 import { chromium } from '@playwright/test';
 import assert from 'node:assert/strict';
 import { MultiplayerClient } from '@rmc/multiplayer-client';
+import { decode } from '@colyseus/schema';
+import { unpack } from '@colyseus/msgpackr';
+import { Protocol } from '@colyseus/shared-types';
 
 // A separate integration command: requires the running application and public backend.
 const url=process.env.GAME_URL||'http://127.0.0.1:5173/babylon-lite-bomberman-clone/';
 const browser=await chromium.launch({channel:'chrome',headless:true,args:['--enable-unsafe-webgpu']});
 const pages=[],errors=[];
-let observer,touchObserver;
+let observer,touchObserver,expiryProbe;
 async function until(fn,label,timeout=10000){const end=Date.now()+timeout;while(!fn()){if(Date.now()>end)throw Error(label);await new Promise(resolve=>setTimeout(resolve,30));}}
+function inputPacket(bytes){try{const it={offset:1},buffer=new Uint8Array(bytes);if(buffer[0]!==Protocol.ROOM_DATA||!decode.stringCheck(buffer,it)||decode.string(buffer,it)!=='input')return null;return unpack(buffer.subarray(it.offset));}catch{return null;}}
 async function page(options={}){
  const context=await browser.newContext({viewport:{width:1280,height:900},...options});const p=await context.newPage();pages.push(p);
  p.on('console',message=>{const text=message.text();if(/min uptime|No more retries|Network offline|will retry|reconnection successful/.test(text))console.log(text);});
@@ -46,10 +50,13 @@ try {
  observer=new MultiplayerClient(process.env.BACKEND_URL||'https://rmc-colyseus-multiplayer-server.vercel.app','bomberman',{code});void observer.connect();await until(()=>observer.state.status==='connected','spectator admission');const first=observer.state.gameState.people.find(p=>p.number===0);assert.ok(!observer.state.gameState.players.some(p=>p.id===observer.state.sessionId),'late observer spectates');
  // Delay outbound WebSocket traffic and add bounded deterministic jitter. The
  // transport instance already exists; patch its prototype without touching admission.
- await a.evaluate(()=>{const original=WebSocket.prototype.send;window.restoreTransport=()=>{WebSocket.prototype.send=original;};let packet=0,delivery=0;WebSocket.prototype.send=function(data){const copy=ArrayBuffer.isView(data)?new Uint8Array(data.buffer,data.byteOffset,data.byteLength).slice():data instanceof ArrayBuffer?data.slice(0):data;const ws=this;delivery=Math.max(delivery+1,performance.now()+180+(packet++%4)*20);setTimeout(()=>{if(ws.readyState===WebSocket.OPEN)original.call(ws,copy);},Math.max(0,delivery-performance.now()));};});
+ await a.evaluate(()=>{const original=WebSocket.prototype.send;window.restoreTransport=()=>{WebSocket.prototype.send=original;};window.outgoingInputs=[];let packet=0,delivery=0;WebSocket.prototype.send=function(data){const copy=ArrayBuffer.isView(data)?new Uint8Array(data.buffer,data.byteOffset,data.byteLength).slice():data instanceof ArrayBuffer?data.slice(0):data;window.outgoingInputs.push({time:performance.now(),bytes:Array.from(copy instanceof ArrayBuffer?new Uint8Array(copy):copy)});const ws=this;delivery=Math.max(delivery+1,performance.now()+180+(packet++%4)*20);setTimeout(()=>{if(ws.readyState===WebSocket.OPEN)original.call(ws,copy);},Math.max(0,delivery-performance.now()));};});
  const before=await mintPosition(a);await a.keyboard.down('ArrowRight');await a.waitForTimeout(80);const immediate=await mintPosition(a);assert.ok(immediate.x>before.x+2,'movement renders before delayed outbound input can reach server');
  await a.waitForTimeout(220);await a.keyboard.up('ArrowRight');await a.waitForTimeout(1000);const local=await mintPosition(a),remote=await mintPosition(b);assert.ok(Math.abs(local.x-remote.x)<8,'reconciled local and interpolated remote positions converge');
- await a.keyboard.down('ArrowDown');await a.waitForTimeout(100);await a.getByRole('button',{name:'Settings'}).click();await a.waitForTimeout(400);
+ await a.keyboard.down('ArrowDown');await a.waitForTimeout(100);const menuTime=await a.evaluate(()=>performance.now());await a.getByRole('button',{name:'Settings'}).click();
+ let neutral;const neutralDeadline=Date.now()+10000;
+ while(!neutral){const sent=await a.evaluate(since=>window.outgoingInputs.filter(p=>p.time>=since),menuTime);neutral=sent.map(p=>inputPacket(p.bytes)).find(p=>p&&p.x===0&&p.y===0&&!p.bomb);if(Date.now()>neutralDeadline)throw Error('settings emits neutral input');await a.waitForTimeout(30);}
+ await until(()=>observer.state.gameState.players.find(p=>p.id===first.id).ack>=neutral.seq,'server acknowledges settings neutralization');
  const stopped=structuredClone(observer.state.gameState.players.find(p=>p.id===first.id));await a.waitForTimeout(350);const still=observer.state.gameState.players.find(p=>p.id===first.id);assert.ok(Math.hypot(still.x-stopped.x,still.y-stopped.y)<.01,'settings neutralizes held movement while shared server continues');
  await a.getByRole('button',{name:'Resume',exact:true}).click();await a.keyboard.up('ArrowDown');
  await a.evaluate(()=>window.restoreTransport());await a.waitForTimeout(350);
@@ -59,7 +66,7 @@ try {
  async function walk(axis,target){
   const start=actorState()[axis];if(Math.abs(start-target)<.15)return;
   const positive=target>start,key=axis==='x'?(positive?'ArrowRight':'ArrowLeft'):(positive?'ArrowDown':'ArrowUp');
-  await a.keyboard.down(key);try{await until(()=>positive?actorState()[axis]>=target-.08:actorState()[axis]<=target+.08,`walk ${axis} to ${target}`,5000);}finally{await a.keyboard.up(key);}await a.waitForTimeout(120);
+  await a.keyboard.down(key);try{await until(()=>positive?actorState()[axis]>=target-.08:actorState()[axis]<=target+.08,`walk ${axis} to ${target}`,5000);}finally{await a.keyboard.up(key);}await a.waitForTimeout(50);
  }
  // Legal keyboard actions reveal and collect the first seeded bomb-slot item,
  // then place two bombs with unequal deadlines and verify a real chain.
@@ -68,12 +75,24 @@ try {
  await walk('x',1.5);await walk('y',2.5);
  await until(()=>observer.state.gameState.powerups.some(item=>item.cell===19&&item.type==='bomb'),'hidden bomb upgrade reveals after flames',7000);
  await walk('y',1.5);await walk('x',4.5);await until(()=>actorState().capacity===2,'server confirms collected bomb slot');
- await a.keyboard.press('Space');await until(()=>observer.state.gameState.bombs.some(b=>b.owner===first.id),'first chain bomb');
- await a.waitForTimeout(400);await walk('x',3.5);await a.keyboard.press('Space');
+ // Feedback-controlled walking can overshoot by a network round trip. Settle
+ // before the fuse starts, then use ordered, timed keyboard commands at the
+ // authoritative base speed, rather than chasing delayed position snapshots.
+ await a.waitForTimeout(600);
+ for(let n=0;n<12&&Math.abs(actorState().x-4.5)>.12;n++){
+  const delta=4.5-actorState().x,key=delta>0?'ArrowRight':'ArrowLeft';
+  await a.keyboard.down(key);await a.waitForTimeout(Math.min(100,Math.abs(delta)/3*1000));await a.keyboard.up(key);await a.waitForTimeout(600);
+ }
+ assert.ok(Math.abs(actorState().x-4.5)<.2,'center before chain route');
+ async function timedMove(key,ms){await a.keyboard.down(key);await a.waitForTimeout(ms);await a.keyboard.up(key);}
+ await a.keyboard.press('Space');
+ await timedMove('ArrowLeft',650);await a.keyboard.press('Space');
+ await timedMove('ArrowRight',380);await timedMove('ArrowDown',600);
  await until(()=>observer.state.gameState.bombs.filter(b=>b.owner===first.id).length===2,'upgraded capacity allows two simultaneous bombs');
- const chain=observer.state.gameState.bombs.filter(b=>b.owner===first.id).map(b=>({id:b.id,deadline:b.deadline}));
+ const chain=observer.state.gameState.bombs.filter(b=>b.owner===first.id).map(b=>({id:b.id,x:b.x,y:b.y,range:b.range,deadline:b.deadline}));
+ console.log('Authoritative chain setup',JSON.stringify({chain,actor:actorState(),tick:observer.state.gameState.tick}));
  assert.notEqual(chain[0].deadline,chain[1].deadline,'the later bomb has a different natural fuse deadline');
- await walk('x',1.5);await walk('y',2.5);
+ assert.deepEqual(chain.map(b=>[b.x,b.y]).sort((a,b)=>a[0]-b[0]),[[2,1],[4,1]],'keyboard route places bombs within chain range');
  await until(()=>chain.every(b=>observer.state.gameState.blasts.some(blast=>blast.id===b.id)),'earlier bomb chains the later bomb',5000);
  const chainBlasts=observer.state.gameState.blasts.filter(blast=>chain.some(b=>b.id===blast.id));
  assert.equal(chainBlasts[0].until,chainBlasts[1].until,'chain explosions resolve on the same authoritative tick');
@@ -115,9 +134,14 @@ try {
  await touchSession.send('Input.dispatchTouchEvent',{type:'touchCancel',touchPoints:[]});await mobile.waitForTimeout(400);
  const stoppedTouch=touchObserver.state.gameState.players.find(p=>p.id===mobileId).x;await mobile.waitForTimeout(250);assert.ok(Math.abs(touchObserver.state.gameState.players.find(p=>p.id===mobileId).x-stoppedTouch)<.01,'touch cancellation clears held movement');
  await mobile.screenshot({path:'project-name/documentation/multiplayer-mobile.png'});
+ expiryProbe=new MultiplayerClient(process.env.BACKEND_URL||'https://rmc-colyseus-multiplayer-server.vercel.app','bomberman',{create:true});void expiryProbe.connect();await until(()=>expiryProbe.state.status==='connected','create expiry probe');
+ const expiredCode=expiryProbe.state.code;expiryProbe.disconnect();await extra.waitForTimeout(1500);
+ await extra.getByRole('button',{name:'Local practice',exact:true}).click();await extra.getByRole('button',{name:'Play online',exact:true}).click();
+ await extra.getByLabel('Room code').fill(expiredCode);await extra.getByRole('button',{name:'Join room',exact:true}).click();await extra.getByText('Room expired or code not found. Create a new room.').waitFor({timeout:20000});
+ await extra.getByRole('button',{name:'Create room',exact:true}).click();await extra.getByRole('heading',{name:/^Room [A-Z0-9]{6}$/}).waitFor({timeout:20000});
  assert.deepEqual(errors,[]);console.log('PASS: two-browser complete first-to-three and fresh rematch, immediate movement with 180–240ms latency/jitter, converged remote motion, legal keyboard pickup and chain, common winner, offline recovery, simultaneous mobile movement/bomb and cancellation, full-room/invalid-code/isolation and no page errors.');
 } catch(error){
  console.error('Original browser failure:',error);
  for(let n=0;n<pages.length;n++){try{console.error(`Browser ${n+1}:`,(await pages[n].locator('body').innerText({timeout:1000})).slice(0,900));await pages[n].screenshot({path:`.tmp/online-failure-${n+1}.png`,timeout:3000});}catch(diagnostic){console.error(`Browser ${n+1} diagnostic unavailable:`,diagnostic.message);}}
  throw error;
-} finally {observer?.disconnect();touchObserver?.disconnect();await browser.close();}
+} finally {observer?.disconnect();touchObserver?.disconnect();expiryProbe?.disconnect();await browser.close();}

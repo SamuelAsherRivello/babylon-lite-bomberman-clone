@@ -34,4 +34,20 @@ Real Chrome WebAudio checks passed original synthesized music and bomb effects, 
 
 Server candidate v0.9.4 was published by run 36866181231 and its canonical version gate passed. Its local 61-test suite passed; the public suite passed 60/61, including the complete first-to-three/rematch check, but failed an admission assertion (a join returned no room identity). An isolated canonical retest reproduced failure of same-identity recovery. The workflow's rollback also failed with HTTP 402. These failures remain unresolved; do not present the candidate as accepted public delivery.
 
-Read-only hosting probe 36866176461 confirmed **Vercel Hobby with Fluid enabled**. No billing or account settings were changed. The checked-in five-minute function limit and in-memory room ownership remain incompatible with the required long-session continuity gate. Persistent Node.js hosting access has been requested. Client polish and local verification continue independently; final public full-match/rematch and beyond-five-minute evidence remain pending.
+Read-only hosting probe 36866176461 confirmed **Vercel Hobby with Fluid enabled**. No billing or account settings were changed.
+
+## Accepted host limit and published playtest — 2026-10-01
+
+The user explicitly directed us to respect the five-minute limit, replacing the earlier long-session continuity gate and persistent-host request. The server retains maxDuration 300; the two-minute round timer and first-to-three target remain unchanged. The online lobby and README disclose expiry and creating a fresh room. Host resets do not preserve identity or scores. Final public match/rematch and expired-room recreation checks remain required within this accepted constraint.
+
+WIP v0.0.3 is publicly playable from the prominent README link. Pages run 36871504869 successfully deployed commit e656280. The user authorized immediate WIP publication without an additional prepublication test gate. This is distinct from final release acceptance.
+
+The client pins immutable v0.9.4. Subsequent shared-server release v0.9.5 (run 36867189103) passed the complete public suite with unchanged Bomberman sources. Current v0.9.6 deployment run 36870380432 failed the unrelated Neon Breaker input-sync check; do not represent that entire shared deployment as accepted. Bomberman full-loop public-browser verification continues separately. Current game unit checks total 23. Local real-browser audio checks cover all eight effects, music, output gain automation, mute/volume, forced silent launch and teardown.
+
+## Public WIP full-loop verification — 2026-10-01
+
+The updated browser command passed against the published v0.0.3 Pages client and canonical backend: two independent browsers completed a first-to-three match and readied a fresh rematch with zero scores and reset upgrades. It verified ordered 180–240ms outbound latency/jitter, immediate rendered local motion, remote convergence, acknowledged neutral input after opening settings, focus loss, a legal keyboard pickup and same-tick chain explosion, common outcomes and same-identity offline recovery. Mobile checks passed late spectating, simultaneous movement/bomb touch and cancellation, full-room rejection, invalid codes and room isolation. An empty disposed room returned the explicit expired-code guidance, after which the browser created a fresh room. No page errors were reported. This does not simulate a function surviving beyond its limit or prove durable state after a host reset.
+
+An earlier failed chain check was a controller error: delayed snapshot feedback overshot the second bomb to tile 1 while the first was at tile 4 (range 2). Timed ordered keyboard actions now place bombs at tiles 2 and 4, assert those positions, and move beyond the blast boundary. Game rules and fuse duration were unchanged. Current screenshots multiplayer-round.png, multiplayer-match.png and multiplayer-mobile.png come from the successful public run.
+
+`npm test` passed all 23 checks and `npm run build` passed after the input-neutralization improvement. `node project-name/test/ui-browser.mjs` passed fixed landscape layout, corners/gutters, fullscreen, resize, emulated zoom/DPR, silent settings and unsupported-WebGPU recovery. Final release/version and draw-screen audit remain pending.

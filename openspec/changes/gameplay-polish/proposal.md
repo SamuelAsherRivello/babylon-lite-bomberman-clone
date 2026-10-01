@@ -13,7 +13,7 @@ The public multiplayer milestone supports battles but still returns to a lobby a
 - Create original arcade music and eight event sound effects with mute checkbox, volume and documented silent-testing URL argument.
 - Preserve immediate local prediction, smooth reconciliation and buffered remote motion while new outcomes remain authoritative.
 - Release updated shared rules/server first, pin its verified artifact, publish the game release and verify two public browsers completing a match and rematch from the README.
-- Resolve production continuity for matches longer than the current five-minute connection lifetime; do not shorten round timers or victory target to fit hosting.
+- Respect the current five-minute host limit, disclose expiry and provide actionable room recreation without shortening round timers or the victory target. The user explicitly accepted this limit on 2026-10-01.
 
 ## Capabilities
 
@@ -31,4 +31,4 @@ Existing demo-entry, pixel presentation and recovery requirements remain mandato
 
 Shared rules, Bomberman simulation/room handlers, focused game/server tests, released client package, React UI, renderer, original audio, browser checks, documentation and release workflows. Server edits remain in the isolated `.tmp/bomberman-server` checkout and preserve unrelated games, including concurrent Ring Rivals changes. No new runtime package is planned; Web Audio can synthesize original music/effects after user activation.
 
-Unresolved external dependency: current Vercel configuration limits connections to 300 seconds and stores rooms in memory. Existing persistent-host access has been requested from the user; none is verified yet. Verify supported hosting configuration using existing authorized access, or an available persistent Node host/durable continuity solution. Final acceptance stays incomplete until long-session continuity is demonstrated. No paid service, unverified credential or durable state is assumed.
+Current Vercel configuration limits connections to 300 seconds and stores rooms in memory. The user explicitly directed us to respect the five-minute limit, replacing the earlier long-session continuity gate. Keep the existing host and disclose session expiry/process resets; do not request or assume a paid service. Public full-match/rematch verification within the accepted host lifetime and useful room recreation remain required for final acceptance. The user separately authorized publishing the latest WIP before further testing; that playtest publication is distinct from final acceptance.

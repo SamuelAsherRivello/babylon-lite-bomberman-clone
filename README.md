@@ -88,6 +88,8 @@ WASD or arrow keys move; Space places a bomb. Touch devices have direction and b
 
 Choose **Play online**, create a room and share its six-character code or use **Copy room link**. Friends join, then everyone chooses a color and readies up. Two to four connected players can start. Eliminated players and mid-round arrivals spectate. Each round winner gains one point; rounds advance automatically, upgrades reset, and the first to three wins the match. Everyone readies again for a rematch.
 
+Destroyed blocks can reveal bomb-slot, range and speed upgrades after flames clear. Start with one bomb slot and range two; caps are five bombs, range eight and three speed upgrades of 15% each. Later blasts destroy exposed items. In a round's final 30 seconds, tiles warn for one second before inward walls close. Rounds last at most two minutes; simultaneous final eliminations draw without points.
+
 Online settings and focus loss stop your input while the shared battle continues. A disconnected character remains vulnerable, with its seat reserved for 15 seconds. Recovery can preserve identity and score while the same room survives. The accepted five-minute host limit and process resets can end a room; use **Create room** to play again. Local practice works independently of the backend. Settings control original music/effects with mute and volume; add `mute=1` to the URL for forced silent testing. [Audio provenance](project-name/documentation/audio.md).
 
 The client pins the shared release package and defaults to `https://rmc-colyseus-multiplayer-server.vercel.app`. For local server testing, set `VITE_MULTIPLAYER_SERVER` to your server URL before starting Vite. This is a public endpoint setting, not a secret. See [multiplayer verification and hosting limits](project-name/documentation/multiplayer-verification.md).
@@ -106,15 +108,17 @@ Explore → propose → apply → verify → sync specifications → archive →
 
 ## Final delivery target
 
-The completed README will provide a verified Play Multiplayer Demo link to the public GitHub Pages game. Players will need no installation or credentials: two browsers must create/join a shared room, complete a first-to-three match and rematch using the live shared server. A static build without verified server connectivity does not satisfy delivery.
+The WIP multiplayer link above is live on GitHub Pages and opens the online lobby without installation or credentials. Final acceptance still requires two independent public browsers to complete a first-to-three match and start a rematch using the live shared server. A static build alone does not satisfy delivery.
 
-Client release uses the existing Release GitHub Actions workflow and `version.txt`. Pages deploys `project-name/dist/` under `/babylon-lite-bomberman-clone/`. Public URL and multiplayer completion will be published only after live verification.
+Client release uses the existing Release GitHub Actions workflow and `version.txt`. Pages deploys `project-name/dist/` under `/babylon-lite-bomberman-clone/`. WIP v0.0.3 was published for immediate playtesting before final acceptance, as requested. Formal release and full-loop verification remain tracked in Gameplay Polish.
 
 ## Verification
 
-Sixteen automated checks cover arena symmetry, collision, bomb capacity/fuse, owner passage, chains, deterministic outcomes, pause/restart, scaling, immediate prediction, gradual local reconciliation, uniform remote interpolation under uneven snapshot arrival, and rejected cosmetic bombs. Chrome WebGPU checks exercised keyboard movement/bomb escape, elimination, restart, pause/resume, fullscreen, zoom, unsupported-WebGPU recovery, and emulated mobile multitouch/cancellation at DPR 1.5. Physical touch hardware is unverified.
+Twenty-three automated checks cover arena symmetry, upgrades and caps, collision, bomb capacity/fuse, owner passage, chains, sudden death, deterministic outcomes, pause/restart, scaling, immediate prediction, gradual local reconciliation, uniform remote interpolation under uneven snapshot arrival, and rejected cosmetic bombs. Chrome WebGPU checks exercised keyboard movement/bomb escape, elimination, restart, pause/resume, fullscreen, zoom, unsupported-WebGPU recovery, and emulated mobile multitouch/cancellation at DPR 1.5. Physical touch hardware is unverified.
 
 With the application running and Google Chrome installed, `npm run test:browser` exercises independent browser contexts, private rooms, readiness, authoritative elimination, a late spectator, 180–240ms outbound latency/jitter, pixel-level local movement, remote convergence, offline recovery and mobile joining. The default application URL is `http://127.0.0.1:5173/babylon-lite-bomberman-clone/`; set `GAME_URL` to use another local or public URL and `BACKEND_URL` only when the application was built for a different backend. Final online acceptance remains pending.
+
+Additional browser checks: `node project-name/test/graphics-browser.mjs`, `node project-name/test/audio-browser.mjs`, and `node project-name/test/ui-browser.mjs`. They verify actual WebGPU artwork, synthesized audio and gain controls, and viewport/fullscreen/unsupported-browser behavior. Use `GAME_URL` for the running application. Audio automation is verified; physical speaker output is unverified.
 
 ## References and credits
 

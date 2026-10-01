@@ -1,7 +1,8 @@
 # 2DPixelPerfect presentation
 
 Babylon Lite 1.32.0 native SpriteRenderer renders the arena with WebGPU only.
-Original code-authored 16×16 pixel textures live in src/content/renderer.js.
+Original code-authored 16×16 pixel textures live in src/content/art.js;
+src/content/renderer.js maps its 64-frame atlas to native WebGPU sprites.
 The temporary authoring canvas produces the PNG atlas; it is not a fallback
 game renderer.
 
@@ -72,5 +73,6 @@ fixed landscape layout, four gutters, UI layer, rendering guidance and
 initialization messages. Kept project history, project-name/ application root,
 game assets, native render resolution and latest-stable OpenSpec 1.14.0 skills.
 The user's explicit original music requirement overrides the template's advice
-against music; original effects, mute checkbox, volume and ?mute=1 belong to
-Gameplay Polish. Template showcase controls and assets are not gameplay.
+against music. Gameplay Polish implements original music and eight effects,
+mute checkbox, volume and ?mute=1; see audio.md for provenance and verification.
+Template showcase controls and assets are not gameplay.

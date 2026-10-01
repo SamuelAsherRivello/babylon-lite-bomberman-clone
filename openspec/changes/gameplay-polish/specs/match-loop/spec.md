@@ -22,12 +22,12 @@ The match-result screen SHALL offer a rematch readiness action. At least two con
 - **THEN** scores reset to zero, the next match starts at round one, and no old bombs, blasts, upgrades or held inputs carry over
 
 ### Requirement: Public full-loop delivery
-The README Play Multiplayer Demo link SHALL open the live online lobby without installation or credentials. Two independent public browsers SHALL complete a first-to-three match and start a rematch with consistent outcomes. Production hosting SHALL support match continuity beyond its former five-minute connection boundary without shortening the requested round timer or victory target. Host resets and failed recovery SHALL be reported honestly.
+The README Play Multiplayer Demo link SHALL open the live online lobby without installation or credentials. Two independent public browsers SHALL complete a first-to-three match and start a rematch with consistent outcomes within the accepted five-minute host limit. The server SHALL retain its 300-second limit without shortening the requested round timer or victory target. The game and README SHALL disclose session expiry and offer actionable room recreation. Host resets and failed recovery SHALL be reported honestly; durable room continuity beyond five minutes is not required after the user's explicit acceptance.
 
 #### Scenario: Public match and rematch
 - **WHEN** two browsers launch from the README, join one code and play through three wins
 - **THEN** both agree on the match winner and can ready for a fresh rematch
 
-#### Scenario: Longer session
+#### Scenario: Host-limited session
 - **WHEN** a live session crosses five minutes
-- **THEN** the room, identities and scores persist or recover through a verified authoritative continuity mechanism
+- **THEN** the game reports the interruption or expired room and allows creating a fresh room without promising preserved identities or scores

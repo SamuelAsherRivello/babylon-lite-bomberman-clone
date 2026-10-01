@@ -24,7 +24,7 @@ export function Online({ onExit }) {
       const dt=Math.min((now-last)/1000,.1);last=now;accumulator+=dt;sendElapsed+=dt;
       const c=client.current,id=c?.state.sessionId;
       while(accumulator>=1/60){
-        if(inputEpoch!==input.epoch){pendingBomb=false;inputEpoch=input.epoch;}
+        if(inputEpoch!==input.epoch){pendingBomb=false;inputEpoch=input.epoch;sendElapsed=.05;}
         const active=c?.state.status==='connected'&&!menu.current;
         const read=input.read();const command=active?read:{x:0,y:0,bomb:false};
         if(!active)pendingBomb=false;
