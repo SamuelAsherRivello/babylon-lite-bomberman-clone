@@ -94,7 +94,7 @@ Destroyed blocks can reveal bomb-slot, range and speed upgrades after flames cle
 
 Online settings and focus loss stop your input while the shared battle continues. A disconnected character remains vulnerable, with its seat reserved for 15 seconds. Recovery can preserve identity and score while the same room survives. The accepted five-minute host limit and process resets can end a room; use **Create room** to play again. Local practice works independently of the backend. Settings control original music/effects with mute and volume; add `mute=1` to the URL for forced silent testing. [Audio provenance](project-name/documentation/audio.md).
 
-The client pins the shared release package and defaults to `https://rmc-colyseus-multiplayer-server.vercel.app`. For local server testing, set `VITE_MULTIPLAYER_SERVER` to your server URL before starting Vite. This is a public endpoint setting, not a secret. See [multiplayer verification and hosting limits](project-name/documentation/multiplayer-verification.md).
+The client pins the shared release package and defaults to `https://rmc-colyseus-multiplayer-server.vercel.app`. Set `VITE_MULTIPLAYER_URL` to your server URL before starting Vite to target another deployment; `VITE_MULTIPLAYER_SERVER` remains a compatible alias. This is a public endpoint setting, not a secret. See [multiplayer verification and hosting limits](project-name/documentation/multiplayer-verification.md).
 
 ### Rendering and assets
 

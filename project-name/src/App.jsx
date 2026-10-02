@@ -10,7 +10,7 @@ import {cpuInput} from './game/cpu.js';
 import {BattleOptions,PowerupLegend} from './ui/BattleOptions.jsx';
 import {DeathView} from './game/death-view.js';
 export function App() {
-  const [online,setOnline]=useState(()=>new URLSearchParams(window.location.search).get('mode')==='online');
+  const [online,setOnline]=useState(()=>{const params=new URLSearchParams(window.location.search);return params.get('mode')==='online'||params.has('room');});
   return online?<Online onExit={()=>setOnline(false)}/>:<Practice onOnline={()=>setOnline(true)}/>;
 }
 function Practice({onOnline}) {

@@ -11,7 +11,7 @@ try {
  const url=new URL(process.env.GAME_URL||'http://127.0.0.1:5180/babylon-lite-bomberman-clone/');url.searchParams.set('mode','online');url.searchParams.set('mute','1');
  const a=await (await browser.newContext()).newPage(),b=await (await browser.newContext()).newPage();
  for(const page of [a,b]){page.on('pageerror',error=>errors.push(error.message));await page.goto(url.href);await page.getByRole('heading',{name:'Battle with friends'}).waitFor();}
- await a.getByRole('button',{name:'Create room',exact:true}).click();const title=await a.getByRole('heading',{name:/^Room [A-Z0-9]{6}$/}).innerText();
+ await a.getByRole('button',{name:'Create room',exact:true}).click();const title=await a.getByRole('heading',{name:/^Room [A-Z0-9]{4}$/}).innerText();
  await b.getByLabel('Room code').fill(title.slice(5));await b.getByRole('button',{name:'Join room',exact:true}).click();await b.getByRole('heading',{name:title,exact:true}).waitFor();
  for(let n=0;n<2;n++){const c=new MultiplayerClient(process.env.BACKEND_URL||'https://rmc-colyseus-multiplayer-server.vercel.app','bomberman',{code:title.slice(5)});helpers.push(c);void c.connect();const end=Date.now()+15000;while(c.state.status!=='connected'){if(Date.now()>end)throw Error('draw helper admission');await new Promise(resolve=>setTimeout(resolve,40));}c.send('ready');}
  for(const page of [a,b])await page.getByRole('button',{name:'Ready up',exact:true}).click();

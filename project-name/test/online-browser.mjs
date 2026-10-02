@@ -1,5 +1,6 @@
 import { chromium } from '@playwright/test';
 import assert from 'node:assert/strict';
+import { randomInt } from 'node:crypto';
 import { MultiplayerClient } from '@rmc/multiplayer-client';
 import { decode } from '@colyseus/schema';
 import { unpack } from '@colyseus/msgpackr';
@@ -10,13 +11,13 @@ const url=process.env.GAME_URL||'http://127.0.0.1:5173/babylon-lite-bomberman-cl
 const browser=await chromium.launch({channel:'chrome',headless:true,args:['--enable-unsafe-webgpu']});
 const pages=[],errors=[];
 let observer,fourth,touchObserver,expiryProbe;
-async function until(fn,label,timeout=10000){const end=Date.now()+timeout;while(!fn()){if(Date.now()>end)throw Error(label);await new Promise(resolve=>setTimeout(resolve,30));}}
+async function until(fn,label,timeout=10000){const end=Date.now()+timeout;while(!(await fn())){if(Date.now()>end)throw Error(label);await new Promise(resolve=>setTimeout(resolve,30));}}
 function inputPacket(bytes){try{const it={offset:1},buffer=new Uint8Array(bytes);if(buffer[0]!==Protocol.ROOM_DATA||!decode.stringCheck(buffer,it)||decode.string(buffer,it)!=='input')return null;return unpack(buffer.subarray(it.offset));}catch{return null;}}
-async function page(options={}){
+async function page(options={},destination=url){
  const context=await browser.newContext({viewport:{width:1280,height:900},...options});const p=await context.newPage();pages.push(p);
  p.on('console',message=>{const text=message.text();if(/Socket closed:|min uptime|No more retries|Network offline|will retry|reconnection successful/.test(text))console.log(text);});
  await p.addInitScript(()=>{const Socket=window.WebSocket;window.WebSocket=new Proxy(Socket,{construct(Target,args){const socket=new Target(...args);socket.addEventListener('close',event=>console.info('Socket closed:',event.code,event.reason));return socket;}});});
- p.on('pageerror',e=>errors.push(e.message));const target=new URL(url);target.searchParams.set('mute','1');await p.goto(target.href);if(target.searchParams.get('mode')!=='online')await p.getByRole('button',{name:'Play online',exact:true}).click();else await p.getByRole('heading',{name:'Battle with friends'}).waitFor();await checkLayout(p);
+ p.on('pageerror',e=>errors.push(e.message));const target=new URL(destination);target.searchParams.set('mute','1');await p.goto(target.href);if(target.searchParams.has('room'))await p.getByRole('heading',{name:`Room ${target.searchParams.get('room')}`}).waitFor({timeout:30000});else if(target.searchParams.get('mode')!=='online')await p.getByRole('button',{name:'Play online',exact:true}).click();else await p.getByRole('heading',{name:'Battle with friends'}).waitFor();await checkLayout(p);
  if(process.env.EXPECTED_VERSION)assert.ok((await p.locator('footer.corner_bottom_right').innerText()).includes(`v${process.env.EXPECTED_VERSION}`),'browser displays the expected deployed release');
  return p;
 }
@@ -43,11 +44,12 @@ async function mintPosition(p){
  },[...screenshot]);
 }
 try {
- const a=await page(),b=await page();
- await a.getByRole('button',{name:'Create room',exact:true}).click();const heading=a.getByRole('heading',{name:/^Room [A-Z0-9]{6}$/});await heading.waitFor({timeout:30000});const code=(await heading.innerText()).split(' ')[1];
+ const a=await page();let b=await page();
+ await a.getByRole('button',{name:'Create room',exact:true}).click();const heading=a.getByRole('heading',{name:/^Room [A-Z0-9]{4}$/});await heading.waitFor({timeout:30000});const code=(await heading.innerText()).split(' ')[1];
  await b.getByLabel('Room code').fill(code);await b.getByRole('button',{name:'Join room',exact:true}).click();await b.getByRole('heading',{name:`Room ${code}`}).waitFor({timeout:30000});
  await a.context().grantPermissions(['clipboard-read','clipboard-write']);await a.getByRole('button',{name:'Copy room link',exact:true}).click();await a.getByText('Room link copied.',{exact:true}).waitFor();
  const invite=new URL(await a.evaluate(()=>navigator.clipboard.readText()));assert.equal(invite.searchParams.get('room'),code);assert.equal(invite.searchParams.get('mode'),'online');
+ await b.close();b=await page({},invite.href);await b.getByRole('heading',{name:`Room ${code}`}).waitFor();await until(async()=>{const rows=await b.locator('.overlay ul li').allInnerTexts();return rows.filter(row=>!row.includes('CPU')).length===2;},'invite link rejoins the disconnected room-code seat');
  await a.getByRole('button',{name:'Violet',exact:true}).click();await a.getByText('Player 1 · Violet').waitFor();await a.getByRole('button',{name:'Mint',exact:true}).click();await a.getByText('Player 1 · Mint').waitFor();assert.equal(await b.getByRole('button',{name:'Mint',exact:true}).isDisabled(),true,'occupied colors cannot be selected');
  observer=new MultiplayerClient(process.env.BACKEND_URL||'https://rmc-colyseus-multiplayer-server.vercel.app','bomberman',{code});fourth=new MultiplayerClient(process.env.BACKEND_URL||'https://rmc-colyseus-multiplayer-server.vercel.app','bomberman',{code});void observer.connect();await until(()=>observer.state.status==='connected','third human admission');void fourth.connect();await until(()=>fourth.state.status==='connected','fourth human admission');observer.send('ready');fourth.send('ready');
  await a.getByRole('button',{name:'Ready up',exact:true}).click();await b.getByRole('button',{name:'Ready up',exact:true}).click();for(const p of[a,b])await p.getByText(/s · ALIVE/).waitFor({timeout:10000});
@@ -128,8 +130,9 @@ try {
  assert.ok(observer.state.gameState.people.every(p=>p.score===0));assert.ok(observer.state.gameState.players.every(p=>p.capacity===1&&p.range===2&&p.speedLevel===0));
  fourth.disconnect();await a.waitForTimeout(200);const mobile=await page({viewport:{width:390,height:844},deviceScaleFactor:1.5,isMobile:true,hasTouch:true});await mobile.getByLabel('Room code').fill(code);await mobile.getByRole('button',{name:'Join room',exact:true}).click();await mobile.getByText(/s · ALIVE/).waitFor({timeout:30000});await checkLayout(mobile);await mobile.screenshot({path:'project-name/documentation/multiplayer-mobile.png'});
  const extra=await page();await extra.getByLabel('Room code').fill(code);await extra.getByRole('button',{name:'Join room',exact:true}).click();await extra.getByText('This room is full. Try again when someone leaves.').waitFor({timeout:20000});
- await extra.getByLabel('Room code').fill('BAD000');await extra.getByRole('button',{name:'Join room',exact:true}).click();await extra.getByText('Room expired or code not found. Create a new room.').waitFor({timeout:20000});
- await extra.getByRole('button',{name:'Create room',exact:true}).click();const isolated=extra.getByRole('heading',{name:/^Room [A-Z0-9]{6}$/});await isolated.waitFor({timeout:20000});assert.notEqual(await isolated.innerText(),`Room ${code}`,'new room is isolated');
+ const alphabet='0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZ',unknownCode=Array.from({length:4},()=>alphabet[randomInt(alphabet.length)]).join('');
+ await extra.getByLabel('Room code').fill(unknownCode);await extra.getByRole('button',{name:'Join room',exact:true}).click();await extra.getByText('Room expired or code not found. Create a new room.').waitFor({timeout:20000});
+ await extra.getByRole('button',{name:'Create room',exact:true}).click();const isolated=extra.getByRole('heading',{name:/^Room [A-Z0-9]{4}$/});await isolated.waitFor({timeout:20000});assert.notEqual(await isolated.innerText(),`Room ${code}`,'new room is isolated');
  const touchCode=(await isolated.innerText()).split(' ')[1];
  await mobile.getByRole('button',{name:'Local practice',exact:true}).click();await mobile.getByRole('button',{name:'Play online',exact:true}).click();
  await mobile.getByLabel('Room code').fill(touchCode);await mobile.getByRole('button',{name:'Join room',exact:true}).click();await mobile.getByRole('heading',{name:`Room ${touchCode}`}).waitFor();
@@ -144,10 +147,10 @@ try {
  const stoppedTouch=touchObserver.state.gameState.players.find(p=>p.id===mobileId).x;await mobile.waitForTimeout(250);assert.ok(Math.abs(touchObserver.state.gameState.players.find(p=>p.id===mobileId).x-stoppedTouch)<.01,'touch cancellation clears held movement');
  await mobile.screenshot({path:'project-name/documentation/multiplayer-mobile.png'});
  expiryProbe=new MultiplayerClient(process.env.BACKEND_URL||'https://rmc-colyseus-multiplayer-server.vercel.app','bomberman',{create:true});void expiryProbe.connect();await until(()=>expiryProbe.state.status==='connected','create expiry probe');
- const expiredCode=expiryProbe.state.code;expiryProbe.disconnect();await extra.waitForTimeout(1500);
+ const expiredCode=expiryProbe.state.code;expiryProbe.disconnect();await extra.waitForTimeout(16500);
  await extra.getByRole('button',{name:'Local practice',exact:true}).click();await extra.getByRole('button',{name:'Play online',exact:true}).click();
  await extra.getByLabel('Room code').fill(expiredCode);await extra.getByRole('button',{name:'Join room',exact:true}).click();await extra.getByText('Room expired or code not found. Create a new room.').waitFor({timeout:20000});
- await extra.getByRole('button',{name:'Create room',exact:true}).click();await extra.getByRole('heading',{name:/^Room [A-Z0-9]{6}$/}).waitFor({timeout:20000});
+ await extra.getByRole('button',{name:'Create room',exact:true}).click();await extra.getByRole('heading',{name:/^Room [A-Z0-9]{4}$/}).waitFor({timeout:20000});
  assert.deepEqual(errors,[]);console.log('PASS: two-browser complete first-to-three and fresh rematch, immediate movement with 180–240ms latency/jitter, converged remote motion, legal keyboard pickup and chain, common winner, offline recovery, simultaneous mobile movement/bomb and cancellation, full-room/invalid-code/isolation and no page errors.');
 } catch(error){
  console.error('Original browser failure:',error);
