@@ -94,7 +94,7 @@ $ai-skills-create-game
 
 ## Live Demo
 
-- [**Play Multiplayer Demo — v0.0.5**](https://samuelasherrivello.github.io/babylon-lite-bomberman-clone/?mode=online)
+- [**Play Multiplayer Demo**](https://samuelasherrivello.github.io/babylon-lite-bomberman-clone/?mode=online)
 
 ## Images
 
