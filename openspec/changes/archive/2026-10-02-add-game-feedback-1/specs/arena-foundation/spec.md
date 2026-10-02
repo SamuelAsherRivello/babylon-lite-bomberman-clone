@@ -18,5 +18,5 @@ The game SHALL create cross-shaped blasts dangerous for 0.5 seconds, stop rays a
 - **THEN** the reached bomb detonates once, the block is destroyed, and that ray does not extend beyond the blocking tile
 
 #### Scenario: Owner caught in blast
-- **WHEN** the owner touches their bomb's active blast
+- **WHEN** the non-immune owner touches their bomb's active blast
 - **THEN** they are eliminated and practice presents a restart action

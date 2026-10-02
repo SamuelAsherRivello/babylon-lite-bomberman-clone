@@ -6,11 +6,14 @@ Provide a deterministic playable local arena foundation whose rules can later ru
 ## Requirements
 
 ### Requirement: Arena and movement
-The game SHALL present a 15×13 arena with solid outer walls, fixed pillars, symmetric destructible blocks, clear corner escape routes, continuous collision-constrained movement and gentle corridor alignment.
+The game SHALL present a LOW, MED or HIGH arena of progressively larger dimensions with solid outer walls, fixed pillars, symmetric destructible blocks, clear corner escape routes, continuous collision-constrained movement and gentle corridor alignment.
 
 #### Scenario: Move into an obstacle
 - **WHEN** a player moves toward a solid wall or destructible block
 - **THEN** their character stops at the obstacle without tunneling and can move along an open corridor
+#### Scenario: Opposing blocks constrain motion
+- **WHEN** a player has blocking tiles on both left and right, or both above and below
+- **THEN** movement along that blocked axis stays fixed while open-axis movement retains forgiving collision
 
 ### Requirement: Bomb placement and timing
 The game SHALL start practice with one bomb slot and range two, place bombs on grid tiles with a 2.5-second fuse, reject occupied/blocked placement and exhausted capacity, and permit occupants to leave a new bomb tile but not re-enter it while active.
@@ -20,14 +23,14 @@ The game SHALL start practice with one bomb slot and range two, place bombs on g
 - **THEN** the bomb blocks re-entry and detonates after its simulation fuse
 
 ### Requirement: Blast propagation and elimination
-The game SHALL create cross-shaped blasts dangerous for 0.5 seconds, stop rays at walls and destructible blocks, destroy hit blocks, trigger other bombs immediately, and eliminate any player including the owner touching a dangerous blast. Outcomes SHALL be deterministic for the same initial state and input sequence.
+The game SHALL create cross-shaped blasts dangerous for 0.5 seconds, stop rays at walls and destructible blocks, destroy hit blocks, trigger other bombs immediately, and eliminate any player including the owner touching a dangerous blast unless their lightning immunity is active. Outcomes SHALL be deterministic for the same initial state and input sequence.
 
 #### Scenario: Chain blocked by geometry
 - **WHEN** a blast reaches another bomb and a destructible block further along a ray
 - **THEN** the reached bomb detonates once, the block is destroyed, and that ray does not extend beyond the blocking tile
 
 #### Scenario: Owner caught in blast
-- **WHEN** the owner touches their bomb's active blast
+- **WHEN** the non-immune owner touches their bomb's active blast
 - **THEN** they are eliminated and practice presents a restart action
 
 ### Requirement: Clean practice restart

@@ -34,7 +34,11 @@
 - [x] 4.6 Adapt real-time draw verification to four humans so CPU decisions cannot invalidate the test; verify sudden death on all sizes, fullscreen/resize/touch and lifecycle cleanup.
 
 ## 5. Publish and finalize
-- [ ] 5.1 Update README launch/version, controls, options, pickups, rendering dimensions, original-art provenance and verification evidence; preserve Original AI Prompt history and honest five-minute/early-reset limitations.
-- [ ] 5.2 Commit/push scoped server and game changes, use existing release/deploy workflows and publish the playable multiplayer version without creating a PR.
-- [ ] 5.3 Verify public README link, displayed version, compatible backend and two-client play; reconcile generated release commits into local checkouts.
-- [ ] 5.4 Strictly validate completed change, sync durable specs, archive, and commit/push final documentation/artifacts only after required acceptance checks pass.
+- [x] 5.1 Update README launch/version, controls, options, pickups, rendering dimensions, original-art provenance and verification evidence; preserve Original AI Prompt history and honest five-minute/early-reset limitations.
+- [x] 5.2 Commit/push scoped server and game changes, use existing release/deploy workflows and publish the playable multiplayer version without creating a PR.
+- [x] 5.3 Verify public README link, displayed version, compatible backend and two-client play; reconcile generated release commits into local checkouts.
+- [x] 5.4 Strictly validate the completed change and verify readiness for finalization against the recorded acceptance evidence.
+
+## Mandatory finalization workflow
+
+After the readiness tasks pass, sync every delta into durable specs, verify the merge, archive, and commit/push final documentation and artifacts. These operations remain required delivery work. They are recorded separately from the pre-archive readiness checkbox so archiving does not require falsely claiming that archive and push have already happened. Completion is proven by the archived path, validated accepted specs and verified remote commit.

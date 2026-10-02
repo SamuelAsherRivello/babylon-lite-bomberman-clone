@@ -1,5 +1,9 @@
 # Multiplayer milestone evidence
 
+## Latest release — 2026-10-02
+
+Game v0.0.5 and shared backend/client v0.9.7 are published. Public two-browser first-to-three/rematch, latency/jitter, legal pickups/chains, recovery, mobile simultaneous controls, capacity and isolation passed. Public CPU verification passed all human counts, solo readiness, takeover and HIGH/HARD/Plant settings. See [Game Feedback 1 delivery audit](game-feedback-1-verification.md) for the twelve-feature acceptance matrix and release runs. The shared deployment's second attempt passed Bomberman live checks but failed two unrelated game checks (68/70 public tests); its rollback failed with HTTP 402. Do not represent the entire shared deployment suite as green. Earlier entries below are historical evidence, not the current package/version.
+
 2026-10-01: shared client release v0.9.0 published. Canonical backend health reported v0.9.0 with bomberman registered. Client dependency pins that immutable release tarball.
 
 Local development UI against the public backend: two independent headless Chrome pages with WebGPU created/joined a six-character code, readied, entered the same countdown, and observed the same bomb elimination and Player 2 winner. No page errors. Screenshot: multiplayer-round.png. This does not verify the public Pages client, latency/jitter, long matches or reconnect UI yet.

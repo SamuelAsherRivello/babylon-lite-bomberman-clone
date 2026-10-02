@@ -28,7 +28,7 @@ async function checkLayout(p){
   return {ratio:box.width/box.height,gutters:document.querySelectorAll('.gutter').length,
    canvasFits:canvas.height>0&&canvas.top>=box.top&&canvas.bottom<=box.bottom,
    cornersFit:corners.length===4&&corners.every(n=>n.left>=box.left&&n.right<=box.right&&n.top>=box.top&&n.bottom<=box.bottom),
-   touchFits:!touch||getComputedStyle(touch).display==='none'||(touchBox.top>=canvas.bottom&&touchBox.bottom<=box.bottom)};
+   touchFits:!touch||getComputedStyle(touch).display==='none'||(touchBox.left>=box.left&&touchBox.right<=box.right&&touchBox.top>=box.top&&touchBox.bottom<=box.bottom&&(touchBox.left>=canvas.right||touchBox.right<=canvas.left||touchBox.top>=canvas.bottom||touchBox.bottom<=canvas.top))};
  });
  assert.ok(Math.abs(fit.ratio-16/9)<.001,'one fixed landscape ratio at every browser size');
  assert.equal(fit.gutters,4);assert.ok(fit.canvasFits&&fit.cornersFit&&fit.touchFits,'arena and primary controls fit within viewport');

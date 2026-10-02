@@ -26,7 +26,7 @@ range at eight, and speed at three upgrades of 15% of base speed (3 tiles/second
 The server omits hidden item locations and future wall schedules from snapshots.
 
 Sudden death starts warnings at tick 5400 (90 seconds). Mirrored groups close
-after 60 ticks of warning, with new groups every 45 ticks in an inward pattern.
+after 60 ticks of warning, with size-dependent group intervals that complete the inward pattern before timeout.
 Closure destroys covered bombs/items, clips blasts and eliminates touching
 players together; closed tiles are permanently solid. The round ends with a
 unique survivor or at two minutes. Simultaneous final eliminations and
@@ -43,8 +43,8 @@ retain identity while the same room survives; hosting resets are a separate limi
 
 Restart creates a fresh game and must separately clear browser inputs. Rule
 fixtures run with `node --test project-name/test/rules.test.mjs` from repo root.
-The complete multiplayer delivery requirements remain in the Foundation
-OpenSpec delivery brief; local practice is an intermediate milestone.
+The original multiplayer delivery requirements remain in the Foundation
+OpenSpec delivery brief. Both practice and online play now include four combatants and the feedback features below.
 
 
 Rare glove pickup grants bomb pushing until death. Sliding bombs move six tiles/second until a blocking wall, block, bomb or plant, then explode; sliding suspends their stationary fuse while preserving chain detonation and ownership capacity. Lightning grants 600 simulation ticks of complete immunity and refreshes on recollection. Immune actors can exit an already-overlapping closing wall; they cannot enter other walls and are vulnerable on expiration. Plant ON guarantees one valid starting segment, advances a cardinal frontier every 300 ticks, excludes walls/blocks/bombs/active blasts, and consumes exposed items. Each blast ray cuts its first plant segment and stops. Destroyed plants do not respawn that round.

@@ -6,14 +6,14 @@ Present the complete arena with crisp authored pixel artwork, responsive control
 ## Requirements
 
 ### Requirement: Whole arena pixel presentation
-The game SHALL show the entire arena through a fixed top-down view, preserve authored hard pixel edges without texture smoothing, center integer logical-to-CSS scaling when it fits, and use positive fractional fit otherwise without stretching. Logical/render/backing/display mappings and selected resolution SHALL be documented.
+The game SHALL use the full landscape viewport with a separate UI area and show the entire arena through a fixed top-down view, preserve authored hard pixel edges without texture smoothing, center integer logical-to-CSS scaling when it fits, and use positive fractional fit otherwise without stretching. Logical/render/backing/display mappings and selected resolution SHALL be documented.
 
 #### Scenario: Available viewport cannot fit one logical pixel per CSS pixel
 - **WHEN** the viewport becomes smaller than the logical stage
 - **THEN** the entire arena remains visible with positive fractional scale and the documented strict alignment limitation applies
 
 ### Requirement: Input and HUD
-The game SHALL support WASD/arrows and Space, simultaneous touch direction and bomb actions, input release on blur/cancellation, readable HUD and controls within the viewport, and the four title/links/settings/version corner roles.
+The game SHALL support WASD regardless of Caps Lock or Shift, arrows and Space, simultaneous touch direction and bomb actions, input release on blur/cancellation, readable HUD and controls within the viewport, and the four title/links/settings/version corner roles.
 
 #### Scenario: Touch movement and bomb placement
 - **WHEN** a player holds a direction and presses the bomb button on a narrow screen
@@ -22,6 +22,9 @@ The game SHALL support WASD/arrows and Space, simultaneous touch direction and b
 #### Scenario: Fullscreen resize
 - **WHEN** the player enters fullscreen or resizes the browser
 - **THEN** the whole arena and essential HUD remain visible and controls map correctly to the resized display
+#### Scenario: Capitalized controls
+- **WHEN** a player presses and releases movement keys with Caps Lock or Shift active
+- **THEN** their intended movement starts and stops normally without stuck input
 
 ### Requirement: Recovery and lifecycle
 The game SHALL show useful unsupported-WebGPU and initialization-error messages and SHALL not duplicate loops, resources, listeners or held input after remount/restart. Local practice SHALL expose pause/resume.

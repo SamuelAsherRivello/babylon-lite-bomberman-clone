@@ -1,11 +1,11 @@
 schema: spec-driven
 context: |
   Repository: SamuelAsherRivello/babylon-lite-bomberman-clone.
-  Purpose: original SNES-inspired 2D competitive Bomberman Clone for 2–4
-  online players, delivered as a public multiplayer demo linked from README.
+  Purpose: original SNES-inspired 2D competitive Bomberman Clone for 1–4
+  online humans plus CPUs filling four battle seats, linked from README.
   Verified baseline: React/Vite ESM, npm root, application under project-name/;
   Babylon Lite 1.32.0/WebGPU renderer and released Colyseus shared client
-  v0.9.4 are installed for released game v0.0.4. Preserve template corner UI roles and application root.
+  v0.9.7 are installed for released game v0.0.5. Preserve template corner UI roles and application root.
   Landscape-only viewport, four gutters, nearest-sampled 16px original tiles,
   precise simulation/prediction coordinates and CSS-resolution React UI.
   Runtime targets: desktop and mobile WebGPU browsers with keyboard and touch.
@@ -19,7 +19,12 @@ context: |
   first-to-three matches/rematches, animated original art, original music/effects,
   mute checkbox, volume and URL mute are implemented. Public v0.0.4 full match/rematch,
   pickup/chain, latency/jitter, recovery and mobile checks passed. A real-time local
-  two-browser sudden-death draw passed. Current server typecheck and 67 regressions pass.
+  two-browser sudden-death draw passed. Current server typecheck and 70 local regressions pass.
+  Game Feedback 1 adds twelve requested arena/CPU/UI/pickup options; 40 client
+  checks and build pass. Public v0.0.5 full-match/rematch, latency/jitter,
+  recovery, touch and CPU-count/options checks pass. Shared v0.9.7 deployment
+  passed Bomberman live checks but failed two unrelated games (68/70 public);
+  rollback failed HTTP 402. Preserve this disclosure rather than claiming all green.
   In-memory hosting can lose admission/recovery before five minutes; disclose this
   observed limitation and new-room guidance rather than promising durable rooms.
   Updated template 6a6b7d1 was reconciled after checkpoint 88b39a5. Preserve
