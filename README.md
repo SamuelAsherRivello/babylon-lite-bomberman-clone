@@ -61,7 +61,7 @@ $ai-skills-create-game
 
 ## Images
 
-<img src="https://github.com/SamuelAsherRivello/babylon-lite-bomberman-clone/blob/main/project-name/documentation/multiplayer-draw.png" width="400"/>
+<img src="https://github.com/SamuelAsherRivello/babylon-lite-bomberman-clone/blob/main/project-name/documentation/multiplayer-draw.png"/>
 
 
 ## Getting Started
