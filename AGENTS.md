@@ -3,7 +3,7 @@
 ## Confirmed project overrides
 
 This is the existing Bomberman Clone game, not a new template creation.
-Retain `project-name/` and its history. Choose landscape only. The user's
+Retain `bomberman-clone/` and its history. Choose landscape only. The user's
 original brief explicitly requires original arcade music as well as effects,
 mute and volume; that requirement overrides the template's recommendation
 against music. The user requires the latest stable OpenSpec CLI; retain the
@@ -68,10 +68,10 @@ testing. Human players may enable sound in the normal experience.
   configuration, and repository metadata. Run Git, dependency, build, test,
   and run commands from this root unless the resulting project's inspected
   configuration says otherwise.
-- `project-name/` is the Vite application root. Keep app source, tests, and
+- `bomberman-clone/` is the Vite application root. Keep app source, tests, and
   assets there unless the chosen stack deliberately changes the layout.
-- Project documentation assets belong in `project-name/documentation/`.
-- Keep `project-name/` as the Vite root and synchronize the GitHub repository
+- Project documentation assets belong in `bomberman-clone/documentation/`.
+- Keep `bomberman-clone/` as the Vite root and synchronize the GitHub repository
   URL with the resulting project repository when this template baseline is
   retained.
 

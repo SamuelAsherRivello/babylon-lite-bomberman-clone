@@ -6,8 +6,8 @@
     "dev": "vite",
     "build": "vite build",
     "preview": "vite preview",
-    "test": "node --test project-name/test/*.test.mjs",
-    "test:browser": "node project-name/test/online-browser.mjs"
+    "test": "node --test bomberman-clone/test/*.test.mjs",
+    "test:browser": "node bomberman-clone/test/online-browser.mjs"
   },
   "dependencies": {
     "@babylonjs/lite": "1.32.0",

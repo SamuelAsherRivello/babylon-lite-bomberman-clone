@@ -15,7 +15,7 @@ WebAudio support leaves gameplay playable. Oscillators have short lifetimes,
 at most 32 are active, music stops while the tab is hidden or play is paused,
 and teardown removes listeners/timers, disconnects nodes and closes the context.
 
-Run `node project-name/test/audio-browser.mjs` with Vite running on port 5180
+Run `node bomberman-clone/test/audio-browser.mjs` with Vite running on port 5180
 or set `GAME_URL`. Real Chrome checks verify generated music and all eight
 event signals, actual output-gain automation, mute/volume, silent startup and
 context closure after switching modes. Physical speakers and listening quality

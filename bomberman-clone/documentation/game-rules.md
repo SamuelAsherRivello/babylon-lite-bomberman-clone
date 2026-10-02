@@ -42,7 +42,7 @@ Joining humans take over CPU seats with existing position, life and score; elimi
 retain identity while the same room survives; hosting resets are a separate limit.
 
 Restart creates a fresh game and must separately clear browser inputs. Rule
-fixtures run with `node --test project-name/test/rules.test.mjs` from repo root.
+fixtures run with `node --test bomberman-clone/test/rules.test.mjs` from repo root.
 The original multiplayer delivery requirements remain in the Foundation
 OpenSpec delivery brief. Both practice and online play now include four combatants and the feedback features below.
 

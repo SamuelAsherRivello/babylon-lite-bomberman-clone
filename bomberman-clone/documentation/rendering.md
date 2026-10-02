@@ -70,7 +70,7 @@ Initial source: e526677d65c6bacee5cddd17189213cf565d90c9.
 Updated source: **6a6b7d1b6da77c36b76344c38d110ff56b6db889**, pulled successfully
 on the first attempt after stable checkpoint **88b39a5**. Adapted instructions,
 fixed landscape layout, four gutters, UI layer, rendering guidance and
-initialization messages. Kept project history, project-name/ application root,
+initialization messages. Kept project history, bomberman-clone/ application root,
 game assets, native render resolution and latest-stable OpenSpec 1.14.0 skills.
 The user's explicit original music requirement overrides the template's advice
 against music. Gameplay Polish implements original music and eight effects,

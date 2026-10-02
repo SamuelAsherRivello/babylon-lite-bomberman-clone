@@ -4,7 +4,7 @@ import test from 'node:test';
 import config from '../../vite.config.js';
 import { presentation } from '../src/content/renderer.js';
 test('project identity, layout and production subpath',async()=>{
- assert.equal(config.base,'/babylon-lite-bomberman-clone/');assert.equal(config.root,'project-name');
+ assert.equal(config.base,'/babylon-lite-bomberman-clone/');assert.equal(config.root,'bomberman-clone');
  const page=await readFile(new URL('../index.html',import.meta.url),'utf8');assert.match(page,/<title>Bomberman Clone<\/title>/);
  const app=await readFile(new URL('../src/App.jsx',import.meta.url),'utf8');
  for(const corner of ['corner_top_left','corner_top_right','corner_bottom_left','corner_bottom_right'])assert.ok(app.includes(corner));

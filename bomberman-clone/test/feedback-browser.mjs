@@ -20,7 +20,7 @@ try{
  assert.equal(await page.getByRole('button',{name:'Try again ↗'}).count(),0,'death cause remains unobscured before prompt');
  await page.getByRole('button',{name:'Try again ↗'}).waitFor();assert.ok(Date.now()-died>=2800,'prompt waits three seconds after elimination');
  await page.getByRole('button',{name:'Try again ↗'}).click();await page.getByText('● READY TO BLAST',{exact:true}).waitFor();
- await page.screenshot({path:'project-name/documentation/screenshot01.png'});
+ await page.screenshot({path:'bomberman-clone/documentation/screenshot01.png'});
  assert.deepEqual(errors,[]);console.log('PASS feedback menu, all pickup meanings, map selection, persisted bomb-flash preference and real death/retry delay.');
 }finally{await browser.close();}
 

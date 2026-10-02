@@ -1,4 +1,4 @@
-![Samuel Asher Rivello](project-name/documentation/samuel-asher-rivello-banner.png)
+![Samuel Asher Rivello](bomberman-clone/documentation/samuel-asher-rivello-banner.png)
 
 # Bomberman Clone
 
@@ -98,7 +98,7 @@ $ai-skills-create-game
 
 ## Images
 
-<img src="https://github.com/SamuelAsherRivello/babylon-lite-bomberman-clone/blob/main/project-name/documentation/multiplayer-draw.png"/>
+<img src="https://github.com/SamuelAsherRivello/babylon-lite-bomberman-clone/blob/main/bomberman-clone/documentation/multiplayer-draw.png"/>
 
 
 ## Getting Started
@@ -123,13 +123,13 @@ Choose **Play online**, create a room and share its six-character code or use **
 
 Destroyed blocks can reveal bomb-slot, range and speed upgrades after flames clear. Start with one bomb slot and range two; caps are five bombs, range eight and three speed upgrades of 15% each. Later blasts destroy exposed items. In a round's final 30 seconds, tiles warn for one second before inward walls close. Rounds last at most two minutes; simultaneous final eliminations draw without points.
 
-Online settings and focus loss stop your input while the shared battle continues. A disconnected character remains vulnerable, with its seat reserved for 15 seconds. Recovery can preserve identity and score while the same room survives. The accepted five-minute host limit and process resets can end a room; use **Create room** to play again. Local practice works independently of the backend. Settings control original music/effects with mute and volume; add `mute=1` to the URL for forced silent testing. [Audio provenance](project-name/documentation/audio.md).
+Online settings and focus loss stop your input while the shared battle continues. A disconnected character remains vulnerable, with its seat reserved for 15 seconds. Recovery can preserve identity and score while the same room survives. The accepted five-minute host limit and process resets can end a room; use **Create room** to play again. Local practice works independently of the backend. Settings control original music/effects with mute and volume; add `mute=1` to the URL for forced silent testing. [Audio provenance](bomberman-clone/documentation/audio.md).
 
-The client pins the shared release package and defaults to `https://rmc-colyseus-multiplayer-server.vercel.app`. Set `VITE_MULTIPLAYER_URL` to your server URL before starting Vite to target another deployment; `VITE_MULTIPLAYER_SERVER` remains a compatible alias. This is a public endpoint setting, not a secret. See [multiplayer verification and hosting limits](project-name/documentation/multiplayer-verification.md).
+The client pins the shared release package and defaults to `https://rmc-colyseus-multiplayer-server.vercel.app`. Set `VITE_MULTIPLAYER_URL` to your server URL before starting Vite to target another deployment; `VITE_MULTIPLAYER_SERVER` remains a compatible alias. This is a public endpoint setting, not a secret. See [multiplayer verification and hosting limits](bomberman-clone/documentation/multiplayer-verification.md).
 
 ### Rendering and assets
 
-The viewport uses a fixed 16:9 landscape ratio with four outside gutters. MAP LOW, MED and HIGH use 15×13, 19×15 and 23×17 tiles, or 240×208, 304×240 and 368×272 logical pixels. The full arena stays visible, with menus, pickup meanings and compact touch controls in the extra UI space. There is no orientation selector. Native DPR-aware rendering, integer CSS fit, nearest texture sampling and no mipmaps/MSAA preserve sharp artwork; small viewports use positive fractional fit. [Rendering details and asset provenance](project-name/documentation/rendering.md) and [deterministic rules](project-name/documentation/game-rules.md) describe the implementation. All current game textures are original code-authored pixel art.
+The viewport uses a fixed 16:9 landscape ratio with four outside gutters. MAP LOW, MED and HIGH use 15×13, 19×15 and 23×17 tiles, or 240×208, 304×240 and 368×272 logical pixels. The full arena stays visible, with menus, pickup meanings and compact touch controls in the extra UI space. There is no orientation selector. Native DPR-aware rendering, integer CSS fit, nearest texture sampling and no mipmaps/MSAA preserve sharp artwork; small viewports use positive fractional fit. [Rendering details and asset provenance](bomberman-clone/documentation/rendering.md) and [deterministic rules](bomberman-clone/documentation/game-rules.md) describe the implementation. All current game textures are original code-authored pixel art.
 
 ## Battle options and pickups
 
@@ -159,7 +159,7 @@ Explore → propose → apply → verify → sync specifications → archive →
 
 The multiplayer link above opens the live online lobby without installation or credentials. Two independent public browsers verified a first-to-three match and fresh rematch, public assets, endpoint connectivity, controls, scoring and displayed v0.0.5.
 
-Client release uses the existing Release GitHub Actions workflow and `version.txt`. Run the **Release** workflow, then **Deploy to GitHub Pages** for the generated version commit. Pages deploys `project-name/dist/` under `/babylon-lite-bomberman-clone/`. [Game release v0.0.5](https://github.com/SamuelAsherRivello/babylon-lite-bomberman-clone/releases/tag/v0.0.5) and [pinned shared client v0.9.7](https://github.com/SamuelAsherRivello/rmc-colyseus-multiplayer-server/releases/tag/v0.9.7). WIP v0.0.3 was published immediately for playtesting before final acceptance, as requested.
+Client release uses the existing Release GitHub Actions workflow and `version.txt`. Run the **Release** workflow, then **Deploy to GitHub Pages** for the generated version commit. Pages deploys `bomberman-clone/dist/` under `/babylon-lite-bomberman-clone/`. [Game release v0.0.5](https://github.com/SamuelAsherRivello/babylon-lite-bomberman-clone/releases/tag/v0.0.5) and [pinned shared client v0.9.7](https://github.com/SamuelAsherRivello/rmc-colyseus-multiplayer-server/releases/tag/v0.9.7). WIP v0.0.3 was published immediately for playtesting before final acceptance, as requested.
 
 ## Verification
 
@@ -167,9 +167,9 @@ Forty automated checks cover arena symmetry and map sizes, upgrades and caps, gl
 
 With the application running and Google Chrome installed, `npm run test:browser` exercises independent browser contexts, private rooms, readiness, authoritative elimination, CPU-seat takeover, 180–240ms outbound latency/jitter, pixel-level local movement, remote convergence, full match/rematch, legal pickup/chain, offline recovery and mobile joining. The default application URL is `http://127.0.0.1:5173/babylon-lite-bomberman-clone/`; set `GAME_URL` to use another local or public URL and `BACKEND_URL` only when the application was built for a different backend.
 
-Additional browser checks: `node project-name/test/graphics-browser.mjs`, `node project-name/test/audio-browser.mjs`, `node project-name/test/ui-browser.mjs`, and `node project-name/test/draw-browser.mjs`. They verify actual WebGPU artwork, synthesized audio and gain controls, viewport/fullscreen/unsupported-browser behavior, and a real-time two-browser sudden-death draw with automatic round progression. Draw verification takes approximately 100 seconds. Use `GAME_URL` for the running application and optionally `EXPECTED_VERSION` for the public full-match release check. Audio automation is verified; physical speaker output is unverified.
+Additional browser checks: `node bomberman-clone/test/graphics-browser.mjs`, `node bomberman-clone/test/audio-browser.mjs`, `node bomberman-clone/test/ui-browser.mjs`, and `node bomberman-clone/test/draw-browser.mjs`. They verify actual WebGPU artwork, synthesized audio and gain controls, viewport/fullscreen/unsupported-browser behavior, and a real-time two-browser sudden-death draw with automatic round progression. Draw verification takes approximately 100 seconds. Use `GAME_URL` for the running application and optionally `EXPECTED_VERSION` for the public full-match release check. Audio automation is verified; physical speaker output is unverified.
 
-Additional feedback checks: `node project-name/test/cpu-browser.mjs` checks public solo readiness and all human/CPU mixes with authoritative HIGH/HARD/Plant options. `node project-name/test/feedback-browser.mjs` checks menus, icon meanings, input, corridor movement, preference persistence and death-view delay against Vite (default port 5180). Graphics/feedback fixtures import source modules; use the development server for those commands.
+Additional feedback checks: `node bomberman-clone/test/cpu-browser.mjs` checks public solo readiness and all human/CPU mixes with authoritative HIGH/HARD/Plant options. `node bomberman-clone/test/feedback-browser.mjs` checks menus, icon meanings, input, corridor movement, preference persistence and death-view delay against Vite (default port 5180). Graphics/feedback fixtures import source modules; use the development server for those commands.
 
 ## References and credits
 

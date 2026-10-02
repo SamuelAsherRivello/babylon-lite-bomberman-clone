@@ -2,12 +2,12 @@
 
 2026-10-01. This is an existing project, not a new repository copy. The updated
 template was reconciled at 6a6b7d1 after checkpoint 88b39a5. Confirmed overrides
-retain project-name/ and its history, original music, and OpenSpec 1.14.0.
+retain bomberman-clone/ and its history, original music, and OpenSpec 1.14.0.
 
 | Template-use question | Result | Evidence |
 | --- | --- | --- |
-| Renamed app folder | False | User explicitly requires retaining project-name/ and history. |
-| Vite points to app folder | True | vite.config.js root is project-name. |
+| Renamed app folder | False | User explicitly requires retaining bomberman-clone/ and history. |
+| Vite points to app folder | True | vite.config.js root is bomberman-clone. |
 | Applicable identity placeholders resolved | True | Repository/package/base path identify Bomberman Clone; retained folder and historical prompt are deliberate. |
 | README describes actual project | True | Online play, rules, controls, hosting limits and real demo link. |
 | Setup/run/test/build commands exist | True | package.json; successful Release workflow includes npm ci, npm test and npm run build. |
@@ -25,7 +25,7 @@ not unfinished work.
 | Delivery area | Outcome |
 | --- | --- |
 | Destination mode and app/game choice | Verified: existing Babylon Lite game retained; no template repository mutation. |
-| Project structure and renderer | Verified: root npm/Git, project-name Vite app, native WebGPU only, useful unsupported/retry messages, 240×208 logical arena. |
+| Project structure and renderer | Verified: root npm/Git, bomberman-clone Vite app, native WebGPU only, useful unsupported/retry messages, 240×208 logical arena. |
 | Landscape/gutters/corners | Verified by real browser fullscreen, resize, zoom/DPR and narrow-mobile checks. |
 | OpenSpec setup | Verified latest stable CLI/generated skills 1.14.0 and healthy repository-local doctor; accidental global downgrade restored during audit. |
 | Codex autocomplete after reopening | Unverified: skill files and CLI are verified, but autocomplete UI was not inspected. |

@@ -3,7 +3,7 @@ context: |
   Repository: SamuelAsherRivello/babylon-lite-bomberman-clone.
   Purpose: original SNES-inspired 2D competitive Bomberman Clone for 1–4
   online humans plus CPUs filling four battle seats, linked from README.
-  Verified baseline: React/Vite ESM, npm root, application under project-name/;
+  Verified baseline: React/Vite ESM, npm root, application under bomberman-clone/;
   Babylon Lite 1.32.0/WebGPU renderer and released Colyseus shared client
   v0.9.7 are installed for released game v0.0.5. Preserve template corner UI roles and application root.
   Landscape-only viewport, four gutters, nearest-sampled 16px original tiles,
@@ -39,7 +39,7 @@ context: |
   changes: Foundation, Multiplayer Setup, Gameplay Polish; finish, verify,
   sync and archive each before proposing the next. Planning requests alone
   do not authorize implementation. No pull requests unless explicitly requested.
-  Canonical project documentation assets live in project-name/documentation/.
+  Canonical project documentation assets live in bomberman-clone/documentation/.
   Before proposing or applying a change, record the project's verified purpose,
   runtime targets, architecture, dependency policy, security constraints, and
   validation commands here.

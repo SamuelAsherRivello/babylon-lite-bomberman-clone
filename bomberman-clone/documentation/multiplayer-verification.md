@@ -54,7 +54,7 @@ The updated browser command passed against the published v0.0.3 Pages client and
 
 An earlier failed chain check was a controller error: delayed snapshot feedback overshot the second bomb to tile 1 while the first was at tile 4 (range 2). Timed ordered keyboard actions now place bombs at tiles 2 and 4, assert those positions, and move beyond the blast boundary. Game rules and fuse duration were unchanged. Current screenshots multiplayer-round.png, multiplayer-match.png and multiplayer-mobile.png come from the successful public run.
 
-`npm test` passed all 23 checks and `npm run build` passed after the input-neutralization improvement. `node project-name/test/ui-browser.mjs` passed fixed landscape layout, corners/gutters, fullscreen, resize, emulated zoom/DPR, silent settings and unsupported-WebGPU recovery. Final release/version and draw-screen audit remain pending.
+`npm test` passed all 23 checks and `npm run build` passed after the input-neutralization improvement. `node bomberman-clone/test/ui-browser.mjs` passed fixed landscape layout, corners/gutters, fullscreen, resize, emulated zoom/DPR, silent settings and unsupported-WebGPU recovery. Final release/version and draw-screen audit remain pending.
 
 ## Released game verification — 2026-10-01
 

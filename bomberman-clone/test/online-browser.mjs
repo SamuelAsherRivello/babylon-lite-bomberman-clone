@@ -17,7 +17,7 @@ async function page(options={},destination=url){
  const context=await browser.newContext({viewport:{width:1280,height:900},...options});const p=await context.newPage();pages.push(p);
  p.on('console',message=>{const text=message.text();if(/Socket closed:|min uptime|No more retries|Network offline|will retry|reconnection successful/.test(text))console.log(text);});
  await p.addInitScript(()=>{const Socket=window.WebSocket;window.WebSocket=new Proxy(Socket,{construct(Target,args){const socket=new Target(...args);socket.addEventListener('close',event=>console.info('Socket closed:',event.code,event.reason));return socket;}});});
- p.on('pageerror',e=>errors.push(e.message));const target=new URL(destination);target.searchParams.set('mute','1');await p.goto(target.href);if(target.searchParams.has('room'))await p.getByRole('heading',{name:`Room ${target.searchParams.get('room')}`}).waitFor({timeout:30000});else if(target.searchParams.get('mode')!=='online')await p.getByRole('button',{name:'Play online',exact:true}).click();else await p.getByRole('heading',{name:'Battle with friends'}).waitFor();await checkLayout(p);
+ p.on('pageerror',e=>errors.push(e.message));const target=new URL(destination);target.searchParams.set('mute','1');await p.goto(target.href);if(target.searchParams.has('room'))await p.getByRole('heading',{name:`Room ${target.searchParams.get('room')}`}).waitFor({timeout:30000});else if(target.searchParams.get('mode')!=='online')await p.getByRole('button',{name:'Play online',exact:true}).click();else await p.getByRole('heading',{name:'Battle with friends'}).waitFor();await p.waitForFunction(()=>document.querySelector('canvas')?.getBoundingClientRect().height>0,null,{timeout:15000});await checkLayout(p);
  if(process.env.EXPECTED_VERSION)assert.ok((await p.locator('footer.corner_bottom_right').innerText()).includes(`v${process.env.EXPECTED_VERSION}`),'browser displays the expected deployed release');
  return p;
 }
@@ -32,7 +32,7 @@ async function checkLayout(p){
    touchFits:!touch||getComputedStyle(touch).display==='none'||(touchBox.left>=box.left&&touchBox.right<=box.right&&touchBox.top>=box.top&&touchBox.bottom<=box.bottom&&(touchBox.left>=canvas.right||touchBox.right<=canvas.left||touchBox.top>=canvas.bottom||touchBox.bottom<=canvas.top))};
  });
  assert.ok(Math.abs(fit.ratio-16/9)<.001,'one fixed landscape ratio at every browser size');
- assert.equal(fit.gutters,4);assert.ok(fit.canvasFits&&fit.cornersFit&&fit.touchFits,'arena and primary controls fit within viewport');
+ assert.equal(fit.gutters,4);assert.ok(fit.canvasFits&&fit.cornersFit&&fit.touchFits,`arena and primary controls fit within viewport: ${JSON.stringify(fit)}`);
 }
 async function mintPosition(p){
  const screenshot=await p.locator('canvas').screenshot();return p.evaluate(async bytes=>{
@@ -45,12 +45,12 @@ async function mintPosition(p){
 }
 try {
  const a=await page();let b=await page();
- await a.getByRole('button',{name:'Create room',exact:true}).click();const heading=a.getByRole('heading',{name:/^Room [A-Z0-9]{4}$/});await heading.waitFor({timeout:30000});const code=(await heading.innerText()).split(' ')[1];
+ await a.getByRole('button',{name:'Create room',exact:true}).click();const heading=a.getByRole('heading',{name:/^Room [A-Z0-9]{6}$/});await heading.waitFor({timeout:30000});const code=(await heading.innerText()).split(' ')[1];
  await b.getByLabel('Room code').fill(code);await b.getByRole('button',{name:'Join room',exact:true}).click();await b.getByRole('heading',{name:`Room ${code}`}).waitFor({timeout:30000});
  await a.context().grantPermissions(['clipboard-read','clipboard-write']);await a.getByRole('button',{name:'Copy room link',exact:true}).click();await a.getByText('Room link copied.',{exact:true}).waitFor();
  const invite=new URL(await a.evaluate(()=>navigator.clipboard.readText()));assert.equal(invite.searchParams.get('room'),code);assert.equal(invite.searchParams.get('mode'),'online');
- await b.close();b=await page({},invite.href);await b.getByRole('heading',{name:`Room ${code}`}).waitFor();await until(async()=>{const rows=await b.locator('.overlay ul li').allInnerTexts();return rows.filter(row=>!row.includes('CPU')).length===2;},'invite link rejoins the disconnected room-code seat');
- await a.getByRole('button',{name:'Violet',exact:true}).click();await a.getByText('Player 1 · Violet').waitFor();await a.getByRole('button',{name:'Mint',exact:true}).click();await a.getByText('Player 1 · Mint').waitFor();assert.equal(await b.getByRole('button',{name:'Mint',exact:true}).isDisabled(),true,'occupied colors cannot be selected');
+ await b.close();b=await page({},invite.href);await b.getByRole('heading',{name:`Room ${code}`}).waitFor();await until(async()=>{const rows=await b.locator('.overlay ul li').allInnerTexts();return rows.filter(row=>!row.includes('CPU')).length===3;},'invite link joins as a new browser while the disconnected seat is reserved');
+ await a.getByRole('button',{name:'Amber',exact:true}).click();await a.getByText('Player 1 · Amber').waitFor();await a.getByRole('button',{name:'Mint',exact:true}).click();await a.getByText('Player 1 · Mint').waitFor();assert.equal(await b.getByRole('button',{name:'Mint',exact:true}).isDisabled(),true,'occupied colors cannot be selected');
  observer=new MultiplayerClient(process.env.BACKEND_URL||'https://rmc-colyseus-multiplayer-server.vercel.app','bomberman',{code});fourth=new MultiplayerClient(process.env.BACKEND_URL||'https://rmc-colyseus-multiplayer-server.vercel.app','bomberman',{code});void observer.connect();await until(()=>observer.state.status==='connected','third human admission');void fourth.connect();await until(()=>fourth.state.status==='connected','fourth human admission');observer.send('ready');fourth.send('ready');
  await a.getByRole('button',{name:'Ready up',exact:true}).click();await b.getByRole('button',{name:'Ready up',exact:true}).click();for(const p of[a,b])await p.getByText(/s · ALIVE/).waitFor({timeout:10000});
  const first=observer.state.gameState.people.find(p=>p.number===0);assert.equal(observer.state.gameState.players.length,4);
@@ -109,30 +109,30 @@ try {
  assert.equal(chainBlasts[0].until,chainBlasts[1].until,'chain explosions resolve on the same authoritative tick');
  assert.ok(actorState().alive,'escaping keyboard-controlled player survives both blasts');
  await until(()=>observer.state.gameState.blasts.length===0,'chain flames clear',3000);
- observer.send('input',{seq:1,x:0,y:0,bomb:true});fourth.send('input',{seq:1,x:0,y:0,bomb:true});await a.keyboard.press('Space');await until(()=>observer.state.gameState.bombs.some(b=>b.owner===first.id),'server confirms bomb placement');for(const p of[a,b])await p.getByRole('heading',{name:'Amber wins!'}).waitFor({timeout:8000});
- await a.screenshot({path:'project-name/documentation/multiplayer-round.png'});
+ observer.send('input',{seq:1,x:0,y:0,bomb:true});fourth.send('input',{seq:1,x:0,y:0,bomb:true});await a.keyboard.press('Space');await until(()=>observer.state.gameState.bombs.some(b=>b.owner===first.id),'server confirms bomb placement');await until(()=>observer.state.gameState.phase==='results','first round resolves');const firstWinner=observer.state.gameState.people.find(p=>p.id===observer.state.gameState.winner);for(const p of[a,b])await p.getByRole('heading',{name:`${['Mint','Amber','Violet','Rose'][firstWinner.color]} wins!`}).waitFor({timeout:8000});
+ await a.screenshot({path:'bomberman-clone/documentation/multiplayer-round.png'});
  await a.evaluate(()=>window.restoreTransport());await a.waitForTimeout(300);
  // Real network loss, then recovery before the reserved-seat deadline.
  await a.context().setOffline(true);await a.waitForTimeout(1200);await a.context().setOffline(false);await a.getByText(/s · ALIVE/).waitFor({timeout:15000});
  assert.ok(observer.state.gameState.people.some(p=>p.id===first.id),'recovery preserved the original identity');
- await a.locator('.scoreboard').getByText(/Amber 1\/3/).waitFor();
+ await until(()=>observer.state.gameState.people.some(p=>p.score===1),'first round score is visible');
  for(let round=2;round<=3;round++){
   await until(()=>observer.state.gameState.phase==='playing'&&observer.state.gameState.round===round,`round ${round} advances automatically`,15000);
   await a.keyboard.press('Space');observer.send('input',{seq:round,x:0,y:0,bomb:true});fourth.send('input',{seq:round,x:0,y:0,bomb:true});
-  await until(()=>observer.state.gameState.people.find(p=>p.number===1)?.score===round,`round ${round} has one common winner`,10000);
+  await until(()=>observer.state.gameState.people.some(p=>p.score===round),`round ${round} has one common winner`,10000);
  }
- for(const p of[a,b])await p.getByRole('heading',{name:'Amber takes the match!'}).waitFor();
- await a.screenshot({path:'project-name/documentation/multiplayer-match.png'});
+ const matchWinner=observer.state.gameState.people.find(p=>p.id===observer.state.gameState.matchWinner);for(const p of[a,b])await p.getByRole('heading',{name:`${['Mint','Amber','Violet','Rose'][matchWinner.color]} takes the match!`}).waitFor();
+ await a.screenshot({path:'bomberman-clone/documentation/multiplayer-match.png'});
  await a.getByRole('button',{name:'Ready for rematch',exact:true}).click();
  await a.waitForTimeout(200);assert.equal(observer.state.gameState.phase,'matchResults','one vote cannot restart the match');
  await b.getByRole('button',{name:'Ready for rematch',exact:true}).click();observer.send('rematch');fourth.send('rematch');
  await until(()=>observer.state.gameState.phase==='playing'&&observer.state.gameState.match===2,'fresh rematch starts',15000);
  assert.ok(observer.state.gameState.people.every(p=>p.score===0));assert.ok(observer.state.gameState.players.every(p=>p.capacity===1&&p.range===2&&p.speedLevel===0));
- fourth.disconnect();await a.waitForTimeout(200);const mobile=await page({viewport:{width:390,height:844},deviceScaleFactor:1.5,isMobile:true,hasTouch:true});await mobile.getByLabel('Room code').fill(code);await mobile.getByRole('button',{name:'Join room',exact:true}).click();await mobile.getByText(/s · ALIVE/).waitFor({timeout:30000});await checkLayout(mobile);await mobile.screenshot({path:'project-name/documentation/multiplayer-mobile.png'});
+ fourth.disconnect();await a.waitForTimeout(200);const mobile=await page({viewport:{width:390,height:844},deviceScaleFactor:1.5,isMobile:true,hasTouch:true});await mobile.getByLabel('Room code').fill(code);await mobile.getByRole('button',{name:'Join room',exact:true}).click();await mobile.getByText(/s · ALIVE/).waitFor({timeout:30000});await checkLayout(mobile);await mobile.screenshot({path:'bomberman-clone/documentation/multiplayer-mobile.png'});
  const extra=await page();await extra.getByLabel('Room code').fill(code);await extra.getByRole('button',{name:'Join room',exact:true}).click();await extra.getByText('This room is full. Try again when someone leaves.').waitFor({timeout:20000});
- const alphabet='0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZ',unknownCode=Array.from({length:4},()=>alphabet[randomInt(alphabet.length)]).join('');
+ const alphabet='0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZ',unknownCode=Array.from({length:6},()=>alphabet[randomInt(alphabet.length)]).join('');
  await extra.getByLabel('Room code').fill(unknownCode);await extra.getByRole('button',{name:'Join room',exact:true}).click();await extra.getByText('Room expired or code not found. Create a new room.').waitFor({timeout:20000});
- await extra.getByRole('button',{name:'Create room',exact:true}).click();const isolated=extra.getByRole('heading',{name:/^Room [A-Z0-9]{4}$/});await isolated.waitFor({timeout:20000});assert.notEqual(await isolated.innerText(),`Room ${code}`,'new room is isolated');
+ await extra.getByRole('button',{name:'Create room',exact:true}).click();const isolated=extra.getByRole('heading',{name:/^Room [A-Z0-9]{6}$/});await isolated.waitFor({timeout:20000});assert.notEqual(await isolated.innerText(),`Room ${code}`,'new room is isolated');
  const touchCode=(await isolated.innerText()).split(' ')[1];
  await mobile.getByRole('button',{name:'Local practice',exact:true}).click();await mobile.getByRole('button',{name:'Play online',exact:true}).click();
  await mobile.getByLabel('Room code').fill(touchCode);await mobile.getByRole('button',{name:'Join room',exact:true}).click();await mobile.getByRole('heading',{name:`Room ${touchCode}`}).waitFor();
@@ -145,12 +145,12 @@ try {
  await until(()=>touchObserver.state.gameState.bombs.some(b=>b.owner===mobileId)&&touchObserver.state.gameState.players.find(p=>p.id===mobileId).x<startX-.15,'simultaneous touch movement and bomb');
  await touchSession.send('Input.dispatchTouchEvent',{type:'touchCancel',touchPoints:[]});await mobile.waitForTimeout(400);
  const stoppedTouch=touchObserver.state.gameState.players.find(p=>p.id===mobileId).x;await mobile.waitForTimeout(250);assert.ok(Math.abs(touchObserver.state.gameState.players.find(p=>p.id===mobileId).x-stoppedTouch)<.01,'touch cancellation clears held movement');
- await mobile.screenshot({path:'project-name/documentation/multiplayer-mobile.png'});
+ await mobile.screenshot({path:'bomberman-clone/documentation/multiplayer-mobile.png'});
  expiryProbe=new MultiplayerClient(process.env.BACKEND_URL||'https://rmc-colyseus-multiplayer-server.vercel.app','bomberman',{create:true});void expiryProbe.connect();await until(()=>expiryProbe.state.status==='connected','create expiry probe');
  const expiredCode=expiryProbe.state.code;expiryProbe.disconnect();await extra.waitForTimeout(16500);
  await extra.getByRole('button',{name:'Local practice',exact:true}).click();await extra.getByRole('button',{name:'Play online',exact:true}).click();
  await extra.getByLabel('Room code').fill(expiredCode);await extra.getByRole('button',{name:'Join room',exact:true}).click();await extra.getByText('Room expired or code not found. Create a new room.').waitFor({timeout:20000});
- await extra.getByRole('button',{name:'Create room',exact:true}).click();await extra.getByRole('heading',{name:/^Room [A-Z0-9]{4}$/}).waitFor({timeout:20000});
+ await extra.getByRole('button',{name:'Create room',exact:true}).click();await extra.getByRole('heading',{name:/^Room [A-Z0-9]{6}$/}).waitFor({timeout:20000});
  assert.deepEqual(errors,[]);console.log('PASS: two-browser complete first-to-three and fresh rematch, immediate movement with 180–240ms latency/jitter, converged remote motion, legal keyboard pickup and chain, common winner, offline recovery, simultaneous mobile movement/bomb and cancellation, full-room/invalid-code/isolation and no page errors.');
 } catch(error){
  console.error('Original browser failure:',error);

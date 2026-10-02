@@ -5,7 +5,7 @@ const browser=await chromium.launch({channel:'chrome',headless:true,args:['--ena
 const url=process.env.GAME_URL||'https://samuelasherrivello.github.io/babylon-lite-bomberman-clone/?mode=online&mute=1';
 async function until(fn){const end=Date.now()+15000;while(!fn()){if(Date.now()>end)throw Error('CPU seat admission');await new Promise(resolve=>setTimeout(resolve,30));}}
 try{
- const a=await browser.newPage({viewport:{width:1440,height:900}});await a.goto(url);await a.getByRole('button',{name:'Create room',exact:true}).click();const heading=a.getByRole('heading',{name:/^Room [A-Z0-9]{4}$/});await heading.waitFor();const code=(await heading.innerText()).slice(5);
+ const a=await browser.newPage({viewport:{width:1440,height:900}});await a.goto(url);await a.getByRole('button',{name:'Create room',exact:true}).click();const heading=a.getByRole('heading',{name:/^Room [A-Z0-9]{6}$/});await heading.waitFor();const code=(await heading.innerText()).slice(5);
  assert.equal((await a.locator('.overlay li').allTextContents()).filter(t=>t.startsWith('CPU')).length,3);
  await a.getByLabel('CPU difficulty').selectOption('HARD');await expect(a.getByLabel('CPU difficulty')).toHaveValue('HARD');
  await a.getByLabel('Map size').selectOption('HIGH');await expect(a.getByLabel('Map size')).toHaveValue('HIGH');
