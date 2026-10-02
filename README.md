@@ -4,71 +4,102 @@
 
 An original SNES-inspired 2D bomb arena built with Babylon Lite and authoritative competitive Colyseus multiplayer.
 
-[**Play Multiplayer Demo — v0.0.5**](https://samuelasherrivello.github.io/babylon-lite-bomberman-clone/?mode=online)
-
-Create a room and share its code or copied room link with a friend. Requires a WebGPU-capable browser. Every battle has four fighters: one to four humans, with CPUs filling the remaining seats. The server has an accepted five-minute session limit. In-memory hosting can also interrupt admission or recovery before that limit; if the room expires or recovery fails, create a new room. Host resets do not preserve scores or identity.
-
 ## Original AI Prompt
 
 <details>
 <summary>Read the full original prompt (edited for grammar, punctuation, spelling, and formatting)</summary>
 
 ```text
-Update this prompt to be for Bomberman for SNES, a 2D multiplayer game using Colyseus.
-
 $ai-skills-create-game
 
-- Title: [Enter the Gungeon Clone]
-- Type: [Multiplayer, online cooperative, 2–4 players. All human players cooperate on the same team.]
+- Title: [Bomberman Clone]
+- Type: [2D online competitive multiplayer, inspired by SNES-era Super Bomberman. Use Colyseus. Each player competes individually; the last survivor wins the round. Support online matches and local practice against CPUs.]
+
 - World and camera:
-  - [Create one 2D level approximately twice the viewport width and twice its height, giving it about four times the area of one screen.]
-  - [The level may be tile-based or use freely placed artwork and geometry.]
-  - [Use a top-down orthographic camera that smoothly follows the local player and stays within the level boundaries.]
-- Core loop: [Cooperate to survive increasingly difficult enemy waves, dodge bullet patterns, collect loot, and choose weapon upgrades between waves. Defeat a boss every five waves. The run ends when the entire team is down.]
-- Controls: [WASD movement, mouse aiming, left-click shooting, and Space to dodge roll with a short cooldown and brief invulnerability.]
-- Cooperative mechanics:
-  - [Create or join a room using a shareable room code, then ready up together.]
-  - [Revive downed teammates, share upgrade rewards, and disable friendly fire.]
-  - [Scale enemy counts and difficulty with the number of active players.]
-  - [Show directional indicators for teammates outside the local camera view.]
+  - [Show the complete, single-screen arena with a fixed top-down camera.]
+  - [Use a tile-based grid with solid outer walls, indestructible pillars, destructible blocks, and distinct player starting areas.]
+  - [Use a landscape 16:9 play area and keep the arena visible on desktop, mobile, and fullscreen.]
+  - [Offer LOW, MED, and HIGH arena sizes: 15×13, 19×15, and 23×17 tiles.]
+  - [Use crisp pixel-art rendering and preserve the grid’s readability as the viewport resizes.]
+
+- Core loop:
+  - [Move through the arena, place timed bombs, escape their blast paths, destroy blocks, collect power-ups, and try to trap opponents.]
+  - [Bombs explode in horizontal and vertical lines. Blasts can trigger other bombs, creating chain reactions.]
+  - [A bomb’s flame can eliminate any player it touches, including its owner.]
+  - [The last surviving player wins the round. Award no round win if all remaining players are eliminated simultaneously.]
+  - [Play first to three round wins to decide the match. Start a fresh rematch with scores and temporary upgrades reset.]
+  - [Each round lasts two minutes. At 90 seconds, begin sudden death by dropping indestructible walls around the arena, progressively reducing the safe space.]
+
+- Controls:
+  - [Move with WASD or the arrow keys. Support Caps Lock and Shift with WASD.]
+  - [Press Space to place a bomb.]
+  - [Provide touch controls with a directional pad and bomb button. Allow movement and bomb placement at the same time.]
+  - [Clear held inputs on focus loss, settings changes, or cancelled touch input.]
+  - [Keep controls responsive and prevent menus from intercepting gameplay keys.]
+
+- Multiplayer mechanics:
+  - [Create or join a room using a shareable room code or link.]
+  - [Support up to four fighter seats. Humans compete individually; CPU fighters fill unoccupied seats.]
+  - [Allow the room host to select CPU difficulty and arena size before starting.]
+  - [Provide ready states and a short countdown before each round.]
+  - [Eliminated players spectate until the next round.]
+  - [After the match, show round scores and let players ready up for a rematch.]
+  - [In online mode, neutralize a player’s input while they use settings or when their browser loses focus.]
+  - [Handle disconnects and reconnects gracefully. Reserve a disconnected player’s seat for 15 seconds; let a CPU take over if they do not return.]
+  - [Clearly explain when a room has expired or cannot be recovered, and let players create a new room.]
+
 - Look and feel:
-  - [Original pixel-art dungeon scenery with stone floors, destructible props, and readable cover.]
-  - [Distinct player colors, expressive enemies, bright projectiles, punchy muzzle flashes, and clear hit feedback.]
-  - [Keep enemy bullets visually distinct from friendly shots. Show player health, teammate status, current wave, remaining enemies, and dodge cooldown.]
+  - [Create original, colorful pixel art inspired by the playful readability of SNES-era Super Bomberman.]
+  - [Draw original characters, bombs, blocks, pickups, arena tiles, and blast effects. Use distinct player colors and walking animations.]
+  - [Make solid walls, destructible blocks, bomb fuses, blast paths, pickups, and sudden-death walls easy to tell apart.]
+  - [Show player status, round wins, remaining round time, pickup meanings, and rematch or retry options without obscuring the arena.]
+  - [Include original arcade-style music and sound effects, plus in-game mute and volume controls.]
+  - [Support a documented URL argument that silences all sound for automated testing.]
+
 - Gameplay requirements:
-  - [Include three starting weapons with distinct firing patterns and meaningful upgrades.]
-  - [Include enemies that chase, fire aimed shots, and emit radial bullet patterns.]
-  - [Provide short breaks between waves for upgrades and a team restart option after defeat.]
+  - [Include Bomb, Range, Speed, Boxing Glove, and Lightning pickups.]
+  - [Bomb increases active bomb capacity, up to five.]
+  - [Range extends bomb blast reach, up to eight tiles.]
+  - [Speed increases movement speed, up to three upgrades.]
+  - [Boxing Glove lets the player push bombs until they hit an obstacle and explode; the effect lasts for that life.]
+  - [Lightning grants ten seconds of invulnerability and visibly warns as it nears expiration.]
+  - [Support optional spreading plants as an arena hazard. Plants spread to adjacent available tiles and can be cleared one segment at a time by bomb blasts.]
+  - [Support optional bomb-fuse flashing as a personal setting.]
+  - [After elimination, keep the scene visible briefly so the player can see what happened before showing retry or room options.]
+  - [Provide CPU difficulty settings and predictable restart and rematch flows.]
+
 - Multiplayer server and smoothness:
-  - [Use https://github.com/SamuelAsherRivello/rmc-colyseus-multiplayer-server or my writable fork: <fork URL, if applicable>.]
-  - [Automatically update the selected server repository with the room logic and synchronized state required by this game.]
-  - [Make the server authoritative for movement validation, combat, enemy spawning, damage, loot, revives, and wave progression.]
-  - [Use supported Colyseus prediction features where available, or implement suitable client-side prediction, server reconciliation, and interpolation.]
-  - [Respond immediately to local movement and dodge inputs. Smooth reconciliation corrections and drive the camera from the predicted local character position to avoid visible jitter.]
-  - [Interpolate remote players and enemies. Use immediate local animations, muzzle flashes, and cosmetic effects while reconciling gameplay outcomes with the server.]
-  - [Use deterministic projectile motion or other bandwidth-efficient synchronization where appropriate.]
-  - [Prioritize a smooth, consistent experience for every player over action density. If synchronization struggles, reduce concurrent bullets, enemies, spawn rates, and firing rates.]
-  - [Handle disconnects and reconnects gracefully.]
-  - [Verify with at least two browser clients, including simulated latency and jitter. Check responsive local movement, stable camera tracking, smooth remote motion, and consistent combat outcomes.]
+  - [Use https://github.com/SamuelAsherRivello/rmc-colyseus-multiplayer-server.]
+  - [Implement the required Bomberman room logic and synchronized game state in the shared Colyseus server and client.]
+  - [Make the server authoritative for arena state, movement validation, bomb placement and fuses, explosions, chain reactions, pickups, eliminations, scoring, sudden death, and round progression.]
+  - [Make local movement respond immediately; reconcile it smoothly with server state.]
+  - [Interpolate remote players and animate local actions promptly while server results are pending.]
+  - [Use deterministic or bandwidth-efficient synchronization where practical.]
+  - [Handle latency, jitter, disconnects, reconnects, room capacity, invalid codes, and expired rooms with clear behavior.]
+  - [Verify complete matches and rematches with at least two browser clients. Add simulated latency and jitter and check movement, remote convergence, shared outcomes, pickups, chain reactions, reconnection, and touch controls.]
+
 - Inspiration links:
-  - [https://store.steampowered.com/app/311690/Enter_the_Gungeon/]
-- Inspiration screenshots: [Attach reference screenshots here.]
-- Originality requirement: [Keep the requested project title, but create original artwork, sounds, characters, weapons, UI, and level layouts; use the reference only for gameplay and visual inspiration.]
+  - [Gameplay inspiration: https://en.wikipedia.org/wiki/Super_Bomberman]
+  - [Supplementary Bomberman reference: https://bomberman.fandom.com/wiki/Super_Bomberman]
+
+- Inspiration screenshots: [None supplied.]
+
+- Originality requirement:
+  - [Make an original Bomberman-inspired game. Use the references for gameplay context and broad visual direction; create original artwork, characters, arena layouts, music, sound effects, and UI. Do not copy game assets.]
+
 ```
 
-Prompt links: [Multiplayer server](https://github.com/SamuelAsherRivello/rmc-colyseus-multiplayer-server) · [Enter the Gungeon](https://store.steampowered.com/app/311690/Enter_the_Gungeon/)
 
 </details>
 
-This earliest request asked to adapt the supplied Gungeon template into a SNES-inspired Bomberman game. The [approved Bomberman brief](project-name/documentation/approved-game-brief.txt) records the subsequent requirements used for implementation, including the three OpenSpec milestones.
+## Live Demo
 
-![Multiplayer match result](project-name/documentation/multiplayer-match.png)
+- [**Play Multiplayer Demo — v0.0.5**](https://samuelasherrivello.github.io/babylon-lite-bomberman-clone/?mode=online)
 
-## Current status
+## Images
 
-Release v0.0.5 adds all twelve Game Feedback 1 requests: the landscape UI rail, four fighters with CPUs, case-insensitive controls, pickup legend, corridor constraints, death view, map sizes, glove, lightning, optional bomb flashes and growing plant. Public two-browser match/rematch, latency/jitter, recovery and touch checks pass against backend v0.9.7. See the [feedback delivery audit](project-name/documentation/game-feedback-1-verification.md), including the shared deployment's unrelated public-test failures and accepted hosting limits.
+<img src="https://github.com/SamuelAsherRivello/babylon-lite-bomberman-clone/blob/main/project-name/documentation/multiplayer-draw.png"/>
 
-All three OpenSpec milestones are complete, synced and archived. Gameplay Polish delivers power-ups, sudden death, first-to-three matches, automatic rounds, rematches, animated original artwork, music/effects, mute and volume, and smooth local/remote movement. Public v0.0.4 passed a complete two-browser match/rematch, legal pickups/chains, simulated latency/jitter, recovery and simultaneous touch controls. Screenshots show current public play; the draw screenshot shows a real-time local two-browser check. See the [delivery audit](project-name/documentation/delivery-audit.md) for evidence and disclosed limits.
 
 ## Getting Started
 
