@@ -17,6 +17,10 @@ export function atlasUrl() {
   for(let y=1;y<15;y+=5){rect(2,1,y,14,1,'#e09b65');rect(2,5,y,1,5,'#553843');}
   rect(3,3,5,10,9,'#101827'); rect(3,2,7,12,5,'#101827'); rect(3,4,5,4,2,'#526174'); rect(3,7,2,2,4,'#cda263'); rect(3,9,1,3,2,'#fff0a0');
   rect(4,4,0,8,16,'#ff623a'); rect(4,0,4,16,8,'#ff623a'); rect(4,6,0,4,16,'#ffce69'); rect(4,0,6,16,4,'#ffce69'); rect(4,6,6,4,4,'#fff5c2');
+  rect(5,3,3,9,8,'#e85977');rect(5,2,7,4,5,'#ff9a9b');rect(5,5,11,6,3,'#fff0bd');rect(5,5,4,5,2,'#ffb0a4');
+  rect(6,8,1,4,5,'#fff4a0');rect(6,5,5,6,4,'#ffd45a');rect(6,7,8,3,3,'#fff4a0');rect(6,5,11,3,4,'#ffd45a');
+  rect(7,3,5,10,9,'#fff4bb');rect(7,2,7,12,5,'#fff4bb');rect(7,7,2,2,4,'#ffb54f');rect(7,9,1,3,2,'#ffffff');
+  rect(8,7,4,2,12,'#5ba747');rect(8,2,3,6,5,'#95db58');rect(8,9,6,5,5,'#69bb4d');rect(8,4,2,3,2,'#d2ee77');
   for(let n=3;n<13;n+=3){rect(9,n,2,2,1,'#f7dc9a');rect(9,n,13,2,1,'#f7dc9a');rect(9,2,n,1,2,'#f7dc9a');rect(9,13,n,1,2,'#f7dc9a');}
   ['#79ded0','#ffce69','#b69bff'].forEach((color,n)=>{
     const f=10+n; rect(f,2,2,12,12,'#152934');rect(f,3,3,10,10,color);rect(f,4,4,8,8,'#28484b');

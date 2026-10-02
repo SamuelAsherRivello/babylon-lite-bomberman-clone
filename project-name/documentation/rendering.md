@@ -8,15 +8,15 @@ game renderer.
 
 ## Resolution and layout
 
-The chosen orientation is **landscape**, with a fixed **320:272 viewport ratio**.
+The chosen orientation is **landscape**, with a fixed **16:9 viewport ratio**.
 The same landscape rectangle is centered in desktop and portrait browser
 windows. Four residual gutters occupy the outside space. All primary React
 UI, including the four template corners, lives inside ui_layer and remains
 available in fullscreen. There is no orientation selector or saved override.
 
-The logical rendered arena is **240×208**, derived from 15×13 tiles at 16px.
+The selected map renders at **240×208**, **304×240** or **368×272**, derived from LOW 15×13, MED 19×15 or HIGH 23×17 tiles at 16px.
 The canvas has its own CSS region between the HUD and controls. Integer scale
-is floor(min(canvasWidth/240, canvasHeight/208)); when that is zero, use the
+is floor(min(canvasWidth/logicalWidth, canvasHeight/logicalHeight)); when that is zero, use the
 positive fractional fit. Center the whole arena without stretching or clipping.
 Small portrait phone windows necessarily show a smaller arena; a larger or
 landscape browser window improves readability without changing game orientation.
@@ -34,7 +34,7 @@ picker is not included in this game.
 
 | Term | Mapping |
 | --- | --- |
-| Logical resolution | 240×208 game pixels; precise simulation coordinates ×16 |
+| Logical resolution | Selected map width×16 and height×16; precise simulation coordinates ×16 |
 | CSS canvas size | Space reserved for the arena within the fixed viewport |
 | Display size | Logical size × integer fit, or positive fractional fallback |
 | Internal render resolution | Native backing resolution |

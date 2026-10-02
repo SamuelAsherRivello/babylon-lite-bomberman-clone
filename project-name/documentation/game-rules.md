@@ -1,7 +1,7 @@
 # Arena and multiplayer rules
 
-`src/game/rules.js` has no browser or renderer dependency. `createGame(ids, seed)`
-creates a 15×13 arena mirrored across both axes, up to four corner players, a clock,
+`src/game/rules.js` has no browser or renderer dependency. `createGame(ids, seed, mapSize, plantEnabled)`
+creates a selected 15×13, 19×15 or 23×17 arena mirrored across both axes, up to four corner players, a clock,
 bombs and blasts. Board values are 0 floor, 1 permanent wall, 2 destructible block.
 Coordinates use tile units and centered player positions. `stepGame` advances
 exactly 1/60 second with per-player x/y/bomb intent. Pause advances nothing.
@@ -33,15 +33,18 @@ unique survivor or at two minutes. Simultaneous final eliminations and
 multiple survivors at timeout draw without a score.
 
 The server runs fixed 60Hz simulation steps accumulated from monotonic elapsed
-time, broadcasting complete state at 20Hz. Two to four connected players ready
+time, broadcasting complete state at 20Hz. One to four connected humans ready; CPUs fill the remaining four battle seats
 in the lobby, followed by a three-second countdown. A round winner gets one
-point; three-second score breaks and countdowns automatically lead to the next
+point; three-second frozen lethal scenes followed by three-second score breaks and countdowns automatically lead to the next
 round. Arena and upgrades reset, scores remain. First to three ends the match;
 all connected players must ready a rematch to reset scores and input history.
-Late joiners spectate until the next round. Fifteen-second seat recovery can
+Joining humans take over CPU seats with existing position, life and score; eliminated seats spectate until the next round. Fifteen-second seat recovery can
 retain identity while the same room survives; hosting resets are a separate limit.
 
 Restart creates a fresh game and must separately clear browser inputs. Rule
 fixtures run with `node --test project-name/test/rules.test.mjs` from repo root.
 The complete multiplayer delivery requirements remain in the Foundation
 OpenSpec delivery brief; local practice is an intermediate milestone.
+
+
+Rare glove pickup grants bomb pushing until death. Sliding bombs move six tiles/second until a blocking wall, block, bomb or plant, then explode; sliding suspends their stationary fuse while preserving chain detonation and ownership capacity. Lightning grants 600 simulation ticks of complete immunity and refreshes on recollection. Immune actors can exit an already-overlapping closing wall; they cannot enter other walls and are vulnerable on expiration. Plant ON guarantees one valid starting segment, advances a cardinal frontier every 300 ticks, excludes walls/blocks/bombs/active blasts, and consumes exposed items. Each blast ray cuts its first plant segment and stops. Destroyed plants do not respawn that round.

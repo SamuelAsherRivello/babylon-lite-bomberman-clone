@@ -6,7 +6,7 @@ An original SNES-inspired 2D bomb arena built with Babylon Lite and authoritativ
 
 [**Play Multiplayer Demo — v0.0.4**](https://samuelasherrivello.github.io/babylon-lite-bomberman-clone/?mode=online)
 
-Create a room and share its code or copied room link with a friend. Requires a WebGPU-capable browser; two to four players. The server has an accepted five-minute session limit. In-memory hosting can also interrupt admission or recovery before that limit; if the room expires or recovery fails, create a new room. Host resets do not preserve scores or identity.
+Create a room and share its code or copied room link with a friend. Requires a WebGPU-capable browser. Every battle has four fighters: one to four humans, with CPUs filling the remaining seats. The server has an accepted five-minute session limit. In-memory hosting can also interrupt admission or recovery before that limit; if the room expires or recovery fails, create a new room. Host resets do not preserve scores or identity.
 
 ## Original AI Prompt
 
@@ -96,7 +96,23 @@ The client pins the shared release package and defaults to `https://rmc-colyseus
 
 ### Rendering and assets
 
-The viewport has one fixed landscape ratio of 320:272, with four outside gutters. The rendered arena is 240×208 logical pixels: 15×13 tiles at 16px. HUD and touch controls have separate CSS space above/below it, including in portrait browser windows and fullscreen. There is no orientation selector. Native DPR-aware rendering, integer CSS fit, nearest texture sampling and no mipmaps/MSAA preserve sharp artwork; small viewports use positive fractional fit. [Rendering details and asset provenance](project-name/documentation/rendering.md) and [deterministic rules](project-name/documentation/game-rules.md) describe the implementation. All current game textures are original code-authored pixel art.
+The viewport uses a fixed 16:9 landscape ratio with four outside gutters. MAP LOW, MED and HIGH use 15×13, 19×15 and 23×17 tiles, or 240×208, 304×240 and 368×272 logical pixels. The full arena stays visible, with menus, pickup meanings and compact touch controls in the extra UI space. There is no orientation selector. Native DPR-aware rendering, integer CSS fit, nearest texture sampling and no mipmaps/MSAA preserve sharp artwork; small viewports use positive fractional fit. [Rendering details and asset provenance](project-name/documentation/rendering.md) and [deterministic rules](project-name/documentation/game-rules.md) describe the implementation. All current game textures are original code-authored pixel art.
+
+## Battle options and pickups
+
+Choose **CPU: LOW / MED / HARD** and **MAP: LOW / MED / HIGH**. The online host selects gameplay options before a match. Humans replace CPU seats without creating extra fighters or reviving an eliminated seat. A disconnected human retains a vulnerable reserved seat for 15 seconds, then a CPU fills it.
+
+**Plant: ON/OFF** creates one random plant when enabled. It spreads to adjacent available tiles every five seconds; contact kills unless lightning immunity is active. Blast each segment individually to clear it. **Bomb Flash: ON/OFF** is a saved personal checkbox: ON flashes each timed bomb twice during its final half-second.
+
+| Pickup | Meaning |
+| --- | --- |
+| Bomb | One more active bomb, maximum five |
+| Range | Longer cross blast, maximum eight tiles |
+| Speed | 15% faster, maximum three upgrades |
+| Boxing glove | Push bombs until they hit an obstacle and explode; lasts that life |
+| Lightning | Complete invulnerability for ten seconds; flashes faster during the final second |
+
+WASD works with Caps Lock and Shift. Blocked corridors prevent sideways wiggle while preserving forgiving turns. After elimination the scene stays frozen for three seconds so you can see the cause before the prompt; other humans continue playing online.
 
 ## OpenSpec milestones
 
@@ -110,7 +126,7 @@ Explore → propose → apply → verify → sync specifications → archive →
 
 The multiplayer link above opens the live online lobby without installation or credentials. Two independent public browsers verified a first-to-three match and fresh rematch, public assets, endpoint connectivity, controls, scoring and displayed v0.0.4.
 
-Client release uses the existing Release GitHub Actions workflow and `version.txt`. Run the **Release** workflow, then **Deploy to GitHub Pages** for the generated version commit. Pages deploys `project-name/dist/` under `/babylon-lite-bomberman-clone/`. [Game release v0.0.4](https://github.com/SamuelAsherRivello/babylon-lite-bomberman-clone/releases/tag/v0.0.4) and [pinned shared client v0.9.4](https://github.com/SamuelAsherRivello/rmc-colyseus-multiplayer-server/releases/tag/v0.9.4). WIP v0.0.3 was published immediately for playtesting before final acceptance, as requested.
+Client release uses the existing Release GitHub Actions workflow and `version.txt`. Run the **Release** workflow, then **Deploy to GitHub Pages** for the generated version commit. Pages deploys `project-name/dist/` under `/babylon-lite-bomberman-clone/`. [Game release v0.0.4](https://github.com/SamuelAsherRivello/babylon-lite-bomberman-clone/releases/tag/v0.0.4) and [pinned shared client v0.9.7](https://github.com/SamuelAsherRivello/rmc-colyseus-multiplayer-server/releases/tag/v0.9.7). WIP v0.0.3 was published immediately for playtesting before final acceptance, as requested.
 
 ## Verification
 
@@ -130,4 +146,3 @@ Additional browser checks: `node project-name/test/graphics-browser.mjs`, `node 
 - [Portfolio](https://www.samuelasherrivello.com/) · [GitHub](https://github.com/SamuelAsherRivello/)
 
 Provided as-is under the [MIT License](LICENSE).
-

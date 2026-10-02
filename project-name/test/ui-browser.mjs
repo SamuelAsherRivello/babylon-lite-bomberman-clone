@@ -9,7 +9,7 @@ async function layout(){await page.waitForFunction(()=>{const canvas=document.qu
   return {ratio:viewport.width/viewport.height,dpr:devicePixelRatio,backing:canvas.width,css:canvas.clientWidth,
     corners:[...document.querySelectorAll('#ui_layer .corner')].every(n=>{const b=n.getBoundingClientRect();return b.left>=viewport.left&&b.right<=viewport.right&&b.top>=viewport.top&&b.bottom<=viewport.bottom;}),
     canvas:box.height>0&&box.top>=viewport.top&&box.bottom<=viewport.bottom};
-});assert.ok(Math.abs(fit.ratio-320/272)<.001);assert.ok(fit.corners&&fit.canvas);assert.ok(Math.abs(fit.backing-fit.css*fit.dpr)<=1,'native DPR is applied exactly once');}
+});assert.ok(Math.abs(fit.ratio-16/9)<.001);assert.ok(fit.corners&&fit.canvas);assert.ok(Math.abs(fit.backing-fit.css*fit.dpr)<=1,'native DPR is applied exactly once');}
 try{
   await page.goto(url.href);await page.getByText('Starting Babylon Lite…').waitFor({state:'hidden'});await layout();
   await page.getByRole('button',{name:'Settings'}).click();await page.getByLabel('Mute all audio').waitFor();
