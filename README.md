@@ -4,10 +4,6 @@
 
 An original SNES-inspired 2D bomb arena built with Babylon Lite and authoritative competitive Colyseus multiplayer.
 
-[**Play Multiplayer Demo — v0.0.5**](https://samuelasherrivello.github.io/babylon-lite-bomberman-clone/?mode=online)
-
-Create a room and share its code or copied room link with a friend. Requires a WebGPU-capable browser. Every battle has four fighters: one to four humans, with CPUs filling the remaining seats. The server has an accepted five-minute session limit. In-memory hosting can also interrupt admission or recovery before that limit; if the room expires or recovery fails, create a new room. Host resets do not preserve scores or identity.
-
 ## Original AI Prompt
 
 <details>
@@ -56,19 +52,17 @@ $ai-skills-create-game
 - Originality requirement: [Keep the requested project title, but create original artwork, sounds, characters, weapons, UI, and level layouts; use the reference only for gameplay and visual inspiration.]
 ```
 
-Prompt links: [Multiplayer server](https://github.com/SamuelAsherRivello/rmc-colyseus-multiplayer-server) · [Enter the Gungeon](https://store.steampowered.com/app/311690/Enter_the_Gungeon/)
 
 </details>
 
-This earliest request asked to adapt the supplied Gungeon template into a SNES-inspired Bomberman game. The [approved Bomberman brief](project-name/documentation/approved-game-brief.txt) records the subsequent requirements used for implementation, including the three OpenSpec milestones.
+## Live Demo
 
-![Multiplayer match result](project-name/documentation/multiplayer-match.png)
+- [**Play Multiplayer Demo — v0.0.5**](https://samuelasherrivello.github.io/babylon-lite-bomberman-clone/?mode=online)
 
-## Current status
+## Images
 
-Release v0.0.5 adds all twelve Game Feedback 1 requests: the landscape UI rail, four fighters with CPUs, case-insensitive controls, pickup legend, corridor constraints, death view, map sizes, glove, lightning, optional bomb flashes and growing plant. Public two-browser match/rematch, latency/jitter, recovery and touch checks pass against backend v0.9.7. See the [feedback delivery audit](project-name/documentation/game-feedback-1-verification.md), including the shared deployment's unrelated public-test failures and accepted hosting limits.
+<img src="https://github.com/SamuelAsherRivello/babylon-lite-bomberman-clone/blob/main/project-name/documentation/multiplayer-draw.png" width="400"/>
 
-All three OpenSpec milestones are complete, synced and archived. Gameplay Polish delivers power-ups, sudden death, first-to-three matches, automatic rounds, rematches, animated original artwork, music/effects, mute and volume, and smooth local/remote movement. Public v0.0.4 passed a complete two-browser match/rematch, legal pickups/chains, simulated latency/jitter, recovery and simultaneous touch controls. Screenshots show current public play; the draw screenshot shows a real-time local two-browser check. See the [delivery audit](project-name/documentation/delivery-audit.md) for evidence and disclosed limits.
 
 ## Getting Started
 
