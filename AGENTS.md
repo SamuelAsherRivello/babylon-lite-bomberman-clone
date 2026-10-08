@@ -74,6 +74,11 @@ testing. Human players may enable sound in the normal experience.
 - Keep `bomberman-clone/` as the Vite root and synchronize the GitHub repository
   URL with the resulting project repository when this template baseline is
   retained.
+- Use [the project structure guide](bomberman-clone/documentation/project-structure.md)
+  for current module ownership and placement, and
+  [the coding standards](bomberman-clone/documentation/coding-standards.md)
+  for source conventions and verification. Keep these guides aligned with the
+  implementation when modules or commands change.
 
 ## React code and styles
 

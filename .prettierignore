@@ -1,0 +1,9 @@
+node_modules/
+bomberman-clone/dist/
+output/
+.agents/
+openspec/changes/archive/
+bomberman-clone/documentation/
+README.md
+AGENTS.md
+CONTRIBUTING.md

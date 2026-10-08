@@ -103,8 +103,9 @@ $ai-skills-create-game
 ## Table of Contents
 
 1. [Getting Started](#getting-started)
-2. [Project Details](#project-details)
-3. [Credits](#credits)
+2. [Project structure and coding standards](#project-structure-and-coding-standards)
+3. [Verification](#verification)
+4. [Credits](#credits)
 
 
 ## Getting Started
@@ -113,15 +114,20 @@ Use Node 24 or newer and npm, from the repository root:
 
 ```sh
 npm ci
+npm run format:check
 npm test
 npm run dev
 ```
 
 Open the URL Vite prints. The application requires a WebGPU-enabled browser and compatible device. A useful error appears if the adapter is unavailable. Build with `npm run build`; serve the production build with `npm run preview`.
 
+### Project structure and coding standards
+
+The repository root owns npm commands, Vite configuration, CI, and OpenSpec. `bomberman-clone/` is the Vite application root; its `src/game`, `src/input`, `src/content`, and `src/ui` folders separate game behavior, controls, media/rendering, and React UI. See the [project structure guide](bomberman-clone/documentation/project-structure.md) for module ownership and placement rules, and the [coding standards](bomberman-clone/documentation/coding-standards.md) for source and verification conventions. Run `npm run format` to format source and tests, then `npm run format:check` to verify them. The shared authoritative server is maintained outside this repository.
+
 ### Controls
 
-WASD or arrow keys move; Space places a bomb. Touch devices have direction and bomb buttons with simultaneous touch support. Bombs explode after 2.5 seconds and remain dangerous for 0.5 seconds. You can leave your newly placed bomb but cannot return through it. Destroy brick blocks and escape your own explosions. Settings pauses local practice; Resume continues and Restart resets the arena.
+WASD or arrow keys move; Space places a bomb. On touch devices, swipe in the information panel to move and tap the arena to place a bomb; separate fingers can do both at once. Bombs explode after 2.5 seconds and remain dangerous for 0.5 seconds. You can leave your newly placed bomb but cannot return through it. Destroy brick blocks and escape your own explosions. Settings pauses local practice; Resume continues and Restart resets the arena.
 
 ### Online play
 
@@ -135,7 +141,7 @@ The client pins the shared release package and defaults to `https://rmc-colyseus
 
 ### Rendering and assets
 
-The viewport uses a fixed 16:9 landscape ratio with four outside gutters. MAP LOW, MED and HIGH use 15×13, 19×15 and 23×17 tiles, or 240×208, 304×240 and 368×272 logical pixels. The full arena stays visible, with menus, pickup meanings and compact touch controls in the extra UI space. There is no orientation selector. Native DPR-aware rendering, integer CSS fit, nearest texture sampling and no mipmaps/MSAA preserve sharp artwork; small viewports use positive fractional fit. [Rendering details and asset provenance](bomberman-clone/documentation/rendering.md) and [deterministic rules](bomberman-clone/documentation/game-rules.md) describe the implementation. All current game textures are original code-authored pixel art.
+The viewport uses a 16:9 landscape composition for fine-pointer browsers and a 9:16 stacked composition for coarse-pointer devices, with four outside gutters where space allows. MAP LOW, MED and HIGH use 15×13, 19×15 and 23×17 tiles, or 240×208, 304×240 and 368×272 authored logical pixels. The complete arena remains visible, with menus and pickup meanings in the information panel. Touch movement uses panel swipes and bomb placement uses arena taps. There is no orientation selector. Native DPR-aware rendering, integer CSS pixels per tile, nearest texture sampling and no mipmaps/MSAA preserve sharp artwork; small slots may display the board at fewer pixels per tile. [Rendering details and asset provenance](bomberman-clone/documentation/rendering.md) and [deterministic rules](bomberman-clone/documentation/game-rules.md) describe the implementation. All current game textures are original code-authored pixel art.
 
 ## Battle options and pickups
 
@@ -169,7 +175,7 @@ Client release uses the existing Release GitHub Actions workflow and `version.tx
 
 ## Verification
 
-Forty automated checks cover arena symmetry and map sizes, upgrades and caps, glove pushing, lightning immunity, plant growth/cutting, CPU decisions, corridor collision, bomb capacity/fuse, owner passage, chains, sudden death, deterministic outcomes, pause/restart, death-view timing, case-insensitive input, scaling, prediction, reconciliation, remote interpolation and rejected cosmetic bombs. Chrome WebGPU checks exercise presentation, keyboard movement/bomb escape, elimination, restart, pause/resume, fullscreen, zoom, unsupported-WebGPU recovery, and emulated mobile multitouch/cancellation. Physical touch hardware is unverified.
+Automated tests cover arena symmetry and map sizes, upgrades and caps, glove pushing, lightning immunity, plant growth/cutting, CPU decisions, corridor collision, bomb capacity/fuse, owner passage, chains, sudden death, deterministic outcomes, pause/restart, death-view timing, case-insensitive input, scaling, prediction, reconciliation, remote interpolation and rejected cosmetic bombs. Chrome WebGPU checks exercise presentation, keyboard movement/bomb escape, elimination, restart, pause/resume, fullscreen, zoom, unsupported-WebGPU recovery, and emulated mobile multitouch/cancellation. Physical touch hardware is unverified.
 
 With the application running and Google Chrome installed, `npm run test:browser` exercises independent browser contexts, private rooms, readiness, authoritative elimination, CPU-seat takeover, 180–240ms outbound latency/jitter, pixel-level local movement, remote convergence, full match/rematch, legal pickup/chain, offline recovery and mobile joining. The default application URL is `http://127.0.0.1:5173/babylon-lite-bomberman-clone/`; set `GAME_URL` to use another local or public URL and `BACKEND_URL` only when the application was built for a different backend.
 

@@ -4,6 +4,9 @@
 node_modules/
 /bomberman-clone/dist/
 
+# Generated analysis and diagnostic reports.
+/output/
+
 # Local configuration. Commit examples only, never credentials.
 .env
 .env.*

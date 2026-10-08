@@ -9,6 +9,11 @@ For the baseline, the repository root holds the npm dependencies and project
 commands; application files live in `bomberman-clone/`. Keep repository metadata
 at the root.
 
+Use the [project structure](bomberman-clone/documentation/project-structure.md)
+guide to place changes and the [coding standards](bomberman-clone/documentation/coding-standards.md)
+for source conventions. Preserve the existing module boundaries unless a
+separate architecture change has been approved.
+
 For a substantial feature or behavior change, use the configured OpenSpec
 workflow. Keep proposals, design decisions, tasks, implementation, and
 verification evidence consistent with one another.
@@ -16,6 +21,8 @@ verification evidence consistent with one another.
 ## Quality expectations
 
 - Keep changes scoped to the stated outcome.
+- Run `npm run format` after editing source, then `npm run format:check` before
+  completion. The format check also runs in CI.
 - Run the relevant automated checks and record manual verification when needed.
 - Verify browser-visible changes in a real browser or runtime.
 - Update README commands, screenshots, and release instructions only from
