@@ -94,11 +94,17 @@ $ai-skills-create-game
 
 ## Live Demo
 
-- [**Play Multiplayer Demo — v0.0.5**](https://samuelasherrivello.github.io/babylon-lite-bomberman-clone/?mode=online)
+- [**Play Multiplayer Demo**](https://samuelasherrivello.github.io/babylon-lite-bomberman-clone/?mode=online)
 
 ## Images
 
 <img src="https://github.com/SamuelAsherRivello/babylon-lite-bomberman-clone/blob/main/bomberman-clone/documentation/multiplayer-draw.png"/>
+
+## Table of Contents
+
+1. [Getting Started](#getting-started)
+2. [Project Details](#project-details)
+3. [Credits](#credits)
 
 
 ## Getting Started
@@ -171,7 +177,7 @@ Additional browser checks: `node bomberman-clone/test/graphics-browser.mjs`, `no
 
 Additional feedback checks: `node bomberman-clone/test/cpu-browser.mjs` checks public solo readiness and all human/CPU mixes with authoritative HIGH/HARD/Plant options. `node bomberman-clone/test/feedback-browser.mjs` checks menus, icon meanings, input, corridor movement, preference persistence and death-view delay against Vite (default port 5180). Graphics/feedback fixtures import source modules; use the development server for those commands.
 
-## References and credits
+## Credits
 
 - [Super Bomberman](https://en.wikipedia.org/wiki/Super_Bomberman): gameplay inspiration.
 - [SNES graphics reference search](https://www.google.com/search?udm=2&q=bomberman+snes+graphics): visual inspiration only.
