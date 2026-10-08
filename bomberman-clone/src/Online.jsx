@@ -4,6 +4,7 @@ import { ReconciledView } from './game/prediction.js';
 import { createGameRenderer } from './content/renderer.js';
 import { createControls, createGestureHandlers } from './input/controls.js';
 import { createGame } from './game/rules.js';
+import { createRoomInvite } from './game/invite-link.js';
 import versionText from '../../version.txt?raw';
 import { Viewport } from './ui/Viewport.jsx';
 import { AudioSettings, useArcadeAudio } from './ui/AudioSettings.jsx';
@@ -64,7 +65,7 @@ export function Online({ onExit }) {
   useEffect(()=>{const roomCode=new URL(window.location.href).searchParams.get('room')?.trim().toUpperCase();if(/^[A-Z0-9]{6}$/.test(roomCode||''))connect({code:roomCode});},[]);
   const toggleSettings=()=>{menu.current=!menu.current;controls.current?.clear();setSettings(menu.current);};
   const g=session.gameState,me=g?.people.find(p=>p.id===session.sessionId),actor=g?.players.find(p=>p.id===session.sessionId);
-  const invite=g?(()=>{const url=new URL(location.href);url.searchParams.set('mode','online');url.searchParams.set('room',g.code);return url.href;})():'';
+  const invite=g?createRoomInvite(window.location.href,import.meta.env.BASE_URL,g.code):'';
   const share=async()=>{try{await navigator.clipboard.writeText(invite);setShareMessage('Room link copied.');}catch{setShareMessage(invite);}};
   return <Viewport>
     <div className="game-layout">
