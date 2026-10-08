@@ -25,14 +25,17 @@ async function checkLayout(p){
  const fit=await p.evaluate(()=>{
   const box=document.querySelector('#viewport').getBoundingClientRect(),canvas=document.querySelector('canvas').getBoundingClientRect();
   const corners=[...document.querySelectorAll('#ui_layer .corner')].map(n=>n.getBoundingClientRect());
- const touch=document.querySelector('.touch-controls'),touchBox=touch?.getBoundingClientRect();
-  return {ratio:box.width/box.height,gutters:document.querySelectorAll('.gutter').length,
+ const panel=document.querySelector('.game-panel'),panelBox=panel.getBoundingClientRect(),arena=document.querySelector('.arena-square').getBoundingClientRect(),coarse=matchMedia('(pointer: coarse)').matches;
+  const grid=getComputedStyle(document.querySelector('.game-layout'));
+  return {ratio:box.width/box.height,gutters:document.querySelectorAll('.gutter').length,coarse,
    canvasFits:canvas.height>0&&canvas.top>=box.top&&canvas.bottom<=box.bottom,
    cornersFit:corners.length===4&&corners.every(n=>n.left>=box.left&&n.right<=box.right&&n.top>=box.top&&n.bottom<=box.bottom),
-   touchFits:!touch||getComputedStyle(touch).display==='none'||(touchBox.left>=box.left&&touchBox.right<=box.right&&touchBox.top>=box.top&&touchBox.bottom<=box.bottom&&(touchBox.left>=canvas.right||touchBox.right<=canvas.left||touchBox.top>=canvas.bottom||touchBox.bottom<=canvas.top))};
+   rows:grid.gridTemplateRows.split(' ').length,columns:grid.gridTemplateColumns.split(' ').length,
+   square:Math.abs(arena.width-arena.height)<1,panelFits:panel.scrollHeight<=panel.clientHeight+1&&panel.querySelector('.panel-content').scrollHeight<=panel.querySelector('.panel-content').clientHeight+1};
  });
- assert.ok(Math.abs(fit.ratio-16/9)<.001,'one fixed landscape ratio at every browser size');
- assert.equal(fit.gutters,4);assert.ok(fit.canvasFits&&fit.cornersFit&&fit.touchFits,`arena and primary controls fit within viewport: ${JSON.stringify(fit)}`);
+ if(fit.coarse){assert.ok(Math.abs(fit.ratio-9/16)<.001);assert.equal(fit.rows,2,'mobile stays stacked');}
+ else{assert.ok(Math.abs(fit.ratio-16/9)<.001);assert.equal(fit.columns,2,'PC stays side by side');}
+ assert.equal(fit.gutters,4);assert.ok(fit.square&&fit.panelFits&&fit.canvasFits&&fit.cornersFit,`arena, panel and corner roles fit within viewport: ${JSON.stringify(fit)}`);
 }
 async function mintPosition(p){
  const screenshot=await p.locator('canvas').screenshot();return p.evaluate(async bytes=>{
@@ -129,6 +132,7 @@ try {
  await until(()=>observer.state.gameState.phase==='playing'&&observer.state.gameState.match===2,'fresh rematch starts',15000);
  assert.ok(observer.state.gameState.people.every(p=>p.score===0));assert.ok(observer.state.gameState.players.every(p=>p.capacity===1&&p.range===2&&p.speedLevel===0));
  fourth.disconnect();await a.waitForTimeout(200);const mobile=await page({viewport:{width:390,height:844},deviceScaleFactor:1.5,isMobile:true,hasTouch:true});await mobile.getByLabel('Room code').fill(code);await mobile.getByRole('button',{name:'Join room',exact:true}).click();await mobile.getByText(/s · ALIVE/).waitFor({timeout:30000});await checkLayout(mobile);await mobile.screenshot({path:'bomberman-clone/documentation/multiplayer-mobile.png'});
+ await mobile.setViewportSize({width:844,height:390});await checkLayout(mobile);await mobile.setViewportSize({width:390,height:844});await checkLayout(mobile);
  const extra=await page();await extra.getByLabel('Room code').fill(code);await extra.getByRole('button',{name:'Join room',exact:true}).click();await extra.getByText('This room is full. Try again when someone leaves.').waitFor({timeout:20000});
  const alphabet='0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZ',unknownCode=Array.from({length:6},()=>alphabet[randomInt(alphabet.length)]).join('');
  await extra.getByLabel('Room code').fill(unknownCode);await extra.getByRole('button',{name:'Join room',exact:true}).click();await extra.getByText('Room expired or code not found. Create a new room.').waitFor({timeout:20000});
@@ -139,9 +143,11 @@ try {
  await extra.getByRole('button',{name:'Ready up',exact:true}).click();await mobile.getByRole('button',{name:'Ready up',exact:true}).click();await mobile.getByText(/s · ALIVE/).waitFor({timeout:10000});await checkLayout(mobile);
  touchObserver=new MultiplayerClient(process.env.BACKEND_URL||'https://rmc-colyseus-multiplayer-server.vercel.app','bomberman',{code:touchCode});void touchObserver.connect();await until(()=>touchObserver.state.status==='connected','touch verification observer');
  const mobileId=touchObserver.state.gameState.people.find(p=>p.number===1).id;
- const left=await mobile.getByRole('button',{name:'←',exact:true}).boundingBox(),bomb=await mobile.getByRole('button',{name:'BOMB',exact:true}).boundingBox();
+ const panelBox=await mobile.locator('.game-panel').boundingBox(),arenaBox=await mobile.locator('.arena-square').boundingBox();
  const touchSession=await mobile.context().newCDPSession(mobile),startX=touchObserver.state.gameState.players.find(p=>p.id===mobileId).x;
- await touchSession.send('Input.dispatchTouchEvent',{type:'touchStart',touchPoints:[{id:11,x:left.x+left.width/2,y:left.y+left.height/2},{id:12,x:bomb.x+bomb.width/2,y:bomb.y+bomb.height/2}]});
+ const panelX=panelBox.x+panelBox.width*.5,panelY=panelBox.y+panelBox.height*.55,arenaX=arenaBox.x+arenaBox.width*.5,arenaY=arenaBox.y+arenaBox.height*.5;
+ await touchSession.send('Input.dispatchTouchEvent',{type:'touchStart',touchPoints:[{id:11,x:panelX,y:panelY},{id:12,x:arenaX,y:arenaY}]});
+ await touchSession.send('Input.dispatchTouchEvent',{type:'touchMove',touchPoints:[{id:11,x:panelX-50,y:panelY},{id:12,x:arenaX,y:arenaY}]});
  await until(()=>touchObserver.state.gameState.bombs.some(b=>b.owner===mobileId)&&touchObserver.state.gameState.players.find(p=>p.id===mobileId).x<startX-.15,'simultaneous touch movement and bomb');
  await touchSession.send('Input.dispatchTouchEvent',{type:'touchCancel',touchPoints:[]});await mobile.waitForTimeout(400);
  const stoppedTouch=touchObserver.state.gameState.players.find(p=>p.id===mobileId).x;await mobile.waitForTimeout(250);assert.ok(Math.abs(touchObserver.state.gameState.players.find(p=>p.id===mobileId).x-stoppedTouch)<.01,'touch cancellation clears held movement');

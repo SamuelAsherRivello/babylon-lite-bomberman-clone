@@ -8,46 +8,46 @@ game renderer.
 
 ## Resolution and layout
 
-The chosen orientation is **landscape**, with a fixed **16:9 viewport ratio**.
-The same landscape rectangle is centered in desktop and portrait browser
-windows. Four residual gutters occupy the outside space. All primary React
-UI, including the four template corners, lives inside ui_layer and remains
-available in fullscreen. There is no orientation selector or saved override.
+The primary pointer selects the composition: fine-pointer PC browsers always
+use landscape with the square arena on the left and the information panel on
+the right; coarse-pointer mobile browsers use portrait with the arena above
+the panel. The mobile composition stays stacked when the phone is held
+sideways, using the available viewport height to fit both regions. There is no
+aspect-ratio selector or saved override. The viewport keeps four residual
+gutters where space is available, and all primary React UI stays inside it
+when fullscreen.
 
-The selected map renders at **240×208**, **304×240** or **368×272**, derived from LOW 15×13, MED 19×15 or HIGH 23×17 tiles at 16px.
-The canvas has its own CSS region between the HUD and controls. Integer scale
-is floor(min(canvasWidth/logicalWidth, canvasHeight/logicalHeight)); when that is zero, use the
-positive fractional fit. Center the whole arena without stretching or clipping.
-Small portrait phone windows necessarily show a smaller arena; a larger or
-landscape browser window improves readability without changing game orientation.
+The live map grid sets the rendering dimensions. Each tile has a 16×16 authored
+source and the displayed board uses one integer number of CSS pixels per tile,
+selected as `floor(min(slotWidth / columns, slotHeight / rows))`, with a
+minimum of one pixel. Thus LOW (15×13), MED (19×15), and HIGH (23×17) boards
+produce integer render dimensions of `columns × tilePixels` by
+`rows × tilePixels`. The complete board is centered in the square arena slot;
+unused space is left when the grid's aspect ratio or integer tile size does not
+fill it. The renderer never crops, stretches, or assigns fractional render
+dimensions.
 
 Foundation originally used a 320×272 logical stage with an internal border.
 The updated template reconciliation separates that border into CSS UI space
 and renders the arena directly, preventing touch controls from covering tiles.
 
-Internal render resolution is **Native**: Babylon Lite renders directly into
-its DPR-aware backing canvas, without a reduced intermediate target. Authored
-16px textures, nearest sampling and integer presentation provide the pixel-art
-look. Reducing native resolution merely to evoke an era would discard detail
-and worsen moving sprite edges, so the template's showcase Quarter/Half/Double
-picker is not included in this game.
-
 | Term | Mapping |
 | --- | --- |
-| Logical resolution | Selected map width×16 and height×16; precise simulation coordinates ×16 |
-| CSS canvas size | Space reserved for the arena within the fixed viewport |
-| Display size | Logical size × integer fit, or positive fractional fallback |
-| Internal render resolution | Native backing resolution |
-| Canvas backing | CSS canvas size × devicePixelRatio, managed by Lite |
+| Logical resolution | Active columns and rows × 16 authored pixels; precise simulation coordinates ×16 |
+| Render resolution | Active columns and rows × the selected positive integer `tilePixels` |
+| CSS canvas size | Square arena slot, maximized within the active platform composition |
+| Display size | Render grid at one CSS pixel per render pixel, centered in the slot |
+| Canvas backing | CSS canvas size × `devicePixelRatio`, managed by Babylon Lite |
 
-The application never assigns canvas.width or canvas.height. DPR is applied
-once to sprite backing coordinates; the engine owns backing allocation.
-React UI stays at independent CSS resolution.
+The application never assigns `canvas.width` or `canvas.height`. Babylon Lite
+owns the DPR-aware backing allocation. Sprite positions and sizes use the
+integer tile mapping and DPR once; React UI stays at independent CSS resolution.
 
 Nearest min/mag filtering, no mipmaps, clamp-to-edge, MSAA 1 and CSS pixelated
 retain hard artwork boundaries. Precise predicted/interpolated positions are
-not rounded per simulation tick. Fractional DPR and fractional fit suspend
-strict physical pixel-alignment guarantees.
+not rounded per simulation tick. Fractional DPR can still place render pixels
+between physical device pixels, but render dimensions and per-tile display
+dimensions remain integer CSS pixels.
 
 ## Lifecycle and verification
 
@@ -57,10 +57,11 @@ failures display useful messages while surrounding UI remains mounted.
 
 Foundation browser checks covered keyboard movement, bomb escape, elimination,
 restart, pause/resume, fullscreen entry/exit, 125% zoom, unsupported WebGPU and
-emulated multitouch cancellation at DPR 1.5. Those historical screenshots use
-the earlier framing; current multiplayer screenshots show the reconciled layout.
-Current browser checks assert fixed ratio, four gutters, four UI corners, a
-positive visible canvas and touch controls outside the canvas.
+emulated multitouch cancellation at DPR 1.5. Current layout checks cover PC
+landscape at multiple window shapes, mobile portrait and mobile held sideways,
+the stacked mobile arrangement, square arena, no-scroll panel fit, fullscreen,
+and all four corner roles. Graphics checks cover all three active map sizes
+and integer render dimensions.
 
 Physical touch hardware remains unverified.
 

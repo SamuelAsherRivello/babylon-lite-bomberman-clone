@@ -46,5 +46,15 @@ fixtures run with `node --test bomberman-clone/test/rules.test.mjs` from repo ro
 The original multiplayer delivery requirements remain in the Foundation
 OpenSpec delivery brief. Both practice and online play now include four combatants and the feedback features below.
 
+## Controls
+
+On PC, hold WASD or the arrow keys to move and press Space to place a bomb.
+On mobile, tap anywhere on the rendered arena to place a bomb. Swipe in any
+direction within the information panel to move; the player keeps moving in
+that direction until the finger is released. A stationary tap on a panel
+control still activates that control. Separate fingers can swipe in the panel
+and tap the arena at the same time. Releasing, cancelling, hiding the page, or
+switching away clears held movement.
+
 
 Rare glove pickup grants bomb pushing until death. Sliding bombs move six tiles/second until a blocking wall, block, bomb or plant, then explode; sliding suspends their stationary fuse while preserving chain detonation and ownership capacity. Lightning grants 600 simulation ticks of complete immunity and refreshes on recollection. Immune actors can exit an already-overlapping closing wall; they cannot enter other walls and are vulnerable on expiration. Plant ON guarantees one valid starting segment, advances a cardinal frontier every 300 ticks, excludes walls/blocks/bombs/active blasts, and consumes exposed items. Each blast ray cuts its first plant segment and stops. Destroyed plants do not respawn that round.

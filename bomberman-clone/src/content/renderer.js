@@ -2,9 +2,12 @@ import { enableErrorDecoding, createEngine, loadTexture2D, createGridSpriteAtlas
 import { getInitializationMessage } from './initialization.js';
 export const LOGICAL = { width: 240, height: 208 };
 export function presentation(width, height, dpr = 1, logical = LOGICAL) {
-  const fit = Math.min(width / logical.width, height / logical.height);
-  const scale = fit >= 1 ? Math.floor(fit) : fit;
-  return { scale, unit: scale * dpr, x: (width - logical.width * scale) / 2 * dpr, y: (height - logical.height * scale) / 2 * dpr };
+  const columns = logical.width / 16, rows = logical.height / 16;
+  const tilePixels = Math.max(1, Math.floor(Math.min(width / columns, height / rows)));
+  const renderWidth = columns * tilePixels, renderHeight = rows * tilePixels;
+  const scale = tilePixels / 16;
+  return { scale, tilePixels, renderWidth, renderHeight, unit: scale * dpr,
+    x: (width - renderWidth) / 2 * dpr, y: (height - renderHeight) / 2 * dpr };
 }
 import { atlasUrl, ATLAS_COLUMNS, ATLAS_ROWS, ACTOR_FRAME } from './art.js';
 const initializations = new WeakMap();

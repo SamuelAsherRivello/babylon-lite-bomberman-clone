@@ -2,16 +2,32 @@ import test from 'node:test';
 import assert from 'node:assert/strict';
 import {readFileSync} from 'node:fs';
 import {createGame,stepGame,placeBomb,index} from '../src/game/rules.js';
-import {createControls} from '../src/input/controls.js';
+import {createControls,createGestureHandlers} from '../src/input/controls.js';
 test('installed immutable client has exactly the same deterministic rules as practice',()=>{
  const local=readFileSync(new URL('../src/game/rules.js',import.meta.url),'utf8').replace(/\r\n/g,'\n').trim();
  const released=readFileSync(new URL(import.meta.resolve('@rmc/multiplayer-client/bomberman')),'utf8').replace(/\r\n/g,'\n').trim();
  assert.equal(released,local);
 });
 test('uppercase press and lowercase release, Shift keys and blur clear controls',()=>{
- const old=globalThis.window;globalThis.window=new EventTarget();const controls=createControls();
+ const old=globalThis.window,oldDocument=globalThis.document;globalThis.window=new EventTarget();globalThis.document=Object.assign(new EventTarget(),{hidden:false});const controls=createControls();
  const key=(type,value)=>{const event=new Event(type,{cancelable:true});Object.defineProperties(event,{key:{value},repeat:{value:false}});window.dispatchEvent(event);};
- try{key('keydown','D');assert.equal(controls.read().x,1);key('keyup','d');assert.equal(controls.read().x,0);key('keydown','W');assert.equal(controls.read().y,-1);window.dispatchEvent(new Event('blur'));assert.equal(controls.read().y,0);}finally{controls.dispose();globalThis.window=old;}
+ try{key('keydown','D');assert.equal(controls.read().x,1);key('keyup','d');assert.equal(controls.read().x,0);key('keydown','W');assert.equal(controls.read().y,-1);window.dispatchEvent(new Event('blur'));assert.equal(controls.read().y,0);}finally{controls.dispose();globalThis.window=old;globalThis.document=oldDocument;}
+});
+test('panel swipe threshold, panel taps, simultaneous arena bomb and held movement, and cancellation cleanup',()=>{
+ const old=globalThis.window,oldDocument=globalThis.document;globalThis.window=new EventTarget();globalThis.document=Object.assign(new EventTarget(),{hidden:false});
+ const controls=createControls(),ref={current:controls},handlers=createGestureHandlers(ref),target={setPointerCapture(){}};
+ const pointer=(pointerId,x,y,extra={})=>({pointerId,pointerType:'touch',clientX:x,clientY:y,currentTarget:target,preventDefault(){},...extra});
+ try{
+  handlers.panel.onPointerDown(pointer(1,0,0));handlers.panel.onPointerMove(pointer(1,8,0));assert.deepEqual(controls.read(),{x:0,y:0,bomb:false},'motion below threshold does not steer');
+  handlers.panel.onPointerUp(pointer(1,8,0));handlers.panel.onPointerDown(pointer(2,0,0));handlers.panel.onPointerUp(pointer(2,0,0));assert.deepEqual(controls.read(),{x:0,y:0,bomb:false},'stationary panel tap has no movement side effect');
+  handlers.panel.onPointerDown(pointer(3,0,0));handlers.panel.onPointerMove(pointer(3,0,20));handlers.arena.onPointerDown(pointer(4,50,50));
+  assert.deepEqual(controls.read(),{x:0,y:1,bomb:true},'a second finger can bomb on the arena while panel swipe movement stays held');
+  handlers.arena.onPointerUp(pointer(4,50,50));handlers.panel.onPointerUp(pointer(3,0,20));assert.deepEqual(controls.read(),{x:0,y:0,bomb:false},'release stops both pointer actions');
+  handlers.panel.onPointerDown(pointer(5,0,0));handlers.panel.onPointerMove(pointer(5,20,0));assert.equal(controls.read().x,1);
+  window.dispatchEvent(new Event('blur'));handlers.panel.onPointerMove(pointer(5,30,0));assert.equal(controls.read().x,0,'blur cannot leave a held swipe active');
+  handlers.panel.onPointerDown(pointer(6,0,0));handlers.panel.onPointerMove(pointer(6,0,-20));handlers.panel.onPointerCancel(pointer(6,0,-20));assert.equal(controls.read().y,0,'pointer cancellation releases held movement');
+  handlers.panel.onPointerDown(pointer(7,0,0));handlers.panel.onPointerMove(pointer(7,0,20));window.dispatchEvent(new Event('pagehide'));handlers.panel.onPointerMove(pointer(7,0,30));assert.equal(controls.read().y,0,'page hide prevents stale pointers from restoring movement');
+ } finally {handlers.dispose();controls.dispose();globalThis.window=old;globalThis.document=oldDocument;}
 });
 test('glove chain detonates a moving bomb exactly once and releases owner capacity',()=>{
  const g=createGame(['a','b']);g.board.fill(0);g.players.forEach(p=>{p.x=10.5;p.y=10.5;});

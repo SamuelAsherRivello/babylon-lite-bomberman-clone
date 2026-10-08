@@ -7,7 +7,11 @@ try{
   const url=new URL(process.env.GAME_URL||'http://127.0.0.1:5180/babylon-lite-bomberman-clone/');url.searchParams.set('mute','1');
   await page.goto(url.href);await page.getByText('Starting Babylon Lite…').waitFor({state:'hidden'});
   await page.evaluate(async()=>{
-    const [{createGameRenderer},{createGame}]=await Promise.all([import('./src/content/renderer.js'),import('./src/game/rules.js')]);
+    const [{createGameRenderer, presentation},{createGame}]=await Promise.all([import('./src/content/renderer.js'),import('./src/game/rules.js')]);
+    for(const [columns,rows] of [[15,13],[19,15],[23,17]])for(const [width,height] of [[480,480],[320,320],[240,240]]){
+      const fit=presentation(width,height,1,{width:columns*16,height:rows*16});
+      if(!Number.isInteger(fit.renderWidth)||!Number.isInteger(fit.renderHeight)||fit.renderWidth>width||fit.renderHeight>height)throw Error(`Grid ${columns}x${rows} does not fit integer render size in ${width}x${height}`);
+    }
     const canvas=document.createElement('canvas');canvas.id='visual-fixture';canvas.style.cssText='position:fixed;top:0;left:0;width:480px;height:416px;z-index:99';document.body.append(canvas);
     const renderer=await createGameRenderer(canvas),state=createGame(['a','b','c','d']);
     state.board=Array(195).fill(0);state.powerups=[{cell:16,type:'bomb'},{cell:31,type:'range'},{cell:46,type:'speed'},{cell:53,type:'glove'},{cell:54,type:'shield'}];state.plants=[55];state.closed=[18];state.warnings=[{cells:[17]}];state.bombs=[{id:1,x:3,y:3,deadline:150}];state.blasts=[{id:2,cells:[64],until:30}];
@@ -44,5 +48,5 @@ try{
   assert.ok((await pixels()).elimination,'elimination produces a visible bounded burst');
   await page.waitForTimeout(600);assert.equal((await pixels()).elimination,false,'elimination particles expire');
   await page.evaluate(()=>{cancelAnimationFrame(window.visualFrame);window.visualFixture.renderer.dispose();document.querySelector('#visual-fixture').remove();});
-  assert.deepEqual(errors,[]);console.log('PASS: actual WebGPU pixels show three readable pickup types, a closed wall, a pulsing wall warning and four distinct couriers.');
+  assert.deepEqual(errors,[]);console.log('PASS: actual WebGPU pixels show three readable pickup types, a closed wall, a pulsing wall warning and four distinct couriers; LOW/MED/HIGH boards fit integer render dimensions in square slots.');
 }finally{await browser.close();}
