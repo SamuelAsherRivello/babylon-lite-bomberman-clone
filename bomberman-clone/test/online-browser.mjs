@@ -99,12 +99,16 @@ async function checkLayout(p) {
     const panel = document.querySelector('.game-panel'),
       panelBox = panel.getBoundingClientRect(),
       arena = document.querySelector('.arena-square').getBoundingClientRect(),
-      coarse = matchMedia('(pointer: coarse)').matches;
+      coarse = matchMedia('(pointer: coarse)').matches,
+      portrait = matchMedia('(orientation: portrait)').matches;
     const grid = getComputedStyle(document.querySelector('.game-layout'));
     return {
       ratio: box.width / box.height,
       gutters: document.querySelectorAll('.gutter').length,
       coarse,
+      portrait,
+      rotateNotice:
+        getComputedStyle(document.querySelector('.orientation-notice')).display !== 'none',
       canvasFits: canvas.height > 0 && canvas.top >= box.top && canvas.bottom <= box.bottom,
       cornersFit:
         corners.length === 4 &&
@@ -124,14 +128,14 @@ async function checkLayout(p) {
           panel.querySelector('.panel-content').clientHeight + 1,
     };
   });
-  if (fit.coarse) {
-    assert.ok(Math.abs(fit.ratio - 9 / 16) < 0.001);
-    assert.equal(fit.rows, 2, 'mobile stays stacked');
-  } else {
-    assert.ok(Math.abs(fit.ratio - 16 / 9) < 0.001);
-    assert.equal(fit.columns, 2, 'PC stays side by side');
-  }
+  assert.ok(Math.abs(fit.ratio - 16 / 9) < 0.001, 'viewport stays landscape');
+  assert.equal(fit.columns, 2, 'arena and panel stay side by side');
   assert.equal(fit.gutters, 4);
+  if (fit.coarse && fit.portrait) {
+    assert.ok(fit.rotateNotice, 'portrait-held phones show a rotate prompt');
+    return;
+  }
+  assert.equal(fit.rotateNotice, false, 'landscape play has no rotate prompt');
   assert.ok(
     fit.square && fit.panelFits && fit.canvasFits && fit.cornersFit,
     `arena, panel and corner roles fit within viewport: ${JSON.stringify(fit)}`,
@@ -511,7 +515,7 @@ try {
   fourth.disconnect();
   await a.waitForTimeout(200);
   const mobile = await page({
-    viewport: { width: 390, height: 844 },
+    viewport: { width: 844, height: 390 },
     deviceScaleFactor: 1.5,
     isMobile: true,
     hasTouch: true,
@@ -521,9 +525,9 @@ try {
   await mobile.getByText(/s · ALIVE/).waitFor({ timeout: 30000 });
   await checkLayout(mobile);
   await mobile.screenshot({ path: 'bomberman-clone/documentation/multiplayer-mobile.png' });
-  await mobile.setViewportSize({ width: 844, height: 390 });
-  await checkLayout(mobile);
   await mobile.setViewportSize({ width: 390, height: 844 });
+  await checkLayout(mobile);
+  await mobile.setViewportSize({ width: 844, height: 390 });
   await checkLayout(mobile);
   const extra = await page();
   await extra.getByLabel('Room code').fill(code);

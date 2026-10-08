@@ -8,14 +8,12 @@ game renderer.
 
 ## Resolution and layout
 
-The primary pointer selects the composition: fine-pointer PC browsers always
-use landscape with the square arena on the left and the information panel on
-the right; coarse-pointer mobile browsers use portrait with the arena above
-the panel. The mobile composition stays stacked when the phone is held
-sideways, using the available viewport height to fit both regions. There is no
-aspect-ratio selector or saved override. The viewport keeps four residual
-gutters where space is available, and all primary React UI stays inside it
-when fullscreen.
+The game uses one 16:9 landscape composition on desktop and mobile. The square
+arena is left of the information panel, which compacts on touch devices while
+keeping the same order. A phone held in portrait shows a rotate-to-landscape
+notice; it does not switch to a portrait game layout. There is no aspect-ratio
+selector or saved override. The viewport keeps four residual gutters where
+space is available, and all primary React UI stays inside it when fullscreen.
 
 The live map grid sets the rendering dimensions. Each tile has a 16×16 authored
 source and the displayed board uses one integer number of CSS pixels per tile,
@@ -35,7 +33,7 @@ and renders the arena directly, preventing touch controls from covering tiles.
 | --- | --- |
 | Logical resolution | Active columns and rows × 16 authored pixels; precise simulation coordinates ×16 |
 | Render resolution | Active columns and rows × the selected positive integer `tilePixels` |
-| CSS canvas size | Square arena slot, maximized within the active platform composition |
+| CSS canvas size | Square arena slot, maximized within the landscape composition |
 | Display size | Render grid at one CSS pixel per render pixel, centered in the slot |
 | Canvas backing | CSS canvas size × `devicePixelRatio`, managed by Babylon Lite |
 
@@ -57,10 +55,10 @@ failures display useful messages while surrounding UI remains mounted.
 
 Foundation browser checks covered keyboard movement, bomb escape, elimination,
 restart, pause/resume, fullscreen entry/exit, 125% zoom, unsupported WebGPU and
-emulated multitouch cancellation at DPR 1.5. Current layout checks cover PC
-landscape at multiple window shapes, mobile portrait and mobile held sideways,
-the stacked mobile arrangement, square arena, no-scroll panel fit, fullscreen,
-and all four corner roles. Graphics checks cover all three active map sizes
+emulated multitouch cancellation at DPR 1.5. Current layout checks cover one
+landscape composition on desktop and mobile, a rotate notice on portrait-held
+phones, square arena, no-scroll panel fit, fullscreen, and all four corner
+roles. Graphics checks cover all three active map sizes
 and integer render dimensions.
 
 Physical touch hardware remains unverified.

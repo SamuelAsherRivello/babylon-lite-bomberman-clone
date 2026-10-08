@@ -27,6 +27,8 @@ async function inspect(page, kind, orientation) {
       columns: grid.gridTemplateColumns.split(' ').length,
       rows: grid.gridTemplateRows.split(' ').length,
       coarse: matchMedia('(pointer: coarse)').matches,
+      rotateNotice:
+        getComputedStyle(document.querySelector('.orientation-notice')).display !== 'none',
       panelFits:
         section.scrollHeight <= section.clientHeight + 1 &&
         content.scrollHeight <= content.clientHeight + 1,
@@ -46,21 +48,14 @@ async function inspect(page, kind, orientation) {
       }),
     };
   });
-  if (kind === 'pc')
-    assert.ok(Math.abs(layout.ratio - 16 / 9) < 0.001, 'PC always keeps landscape viewport ratio');
-  else
-    assert.ok(
-      Math.abs(layout.ratio - 9 / 16) < 0.001,
-      `mobile always uses portrait viewport ${JSON.stringify(layout)}`,
-    );
-  if (kind === 'pc') assert.equal(layout.columns, 2, 'PC uses side-by-side layout');
-  else {
-    assert.equal(layout.rows, 2, 'mobile remains stacked');
-    assert.ok(
-      Math.abs(layout.arena.width - layout.arena.height) < 1,
-      'mobile arena slot is square',
-    );
+  assert.ok(Math.abs(layout.ratio - 16 / 9) < 0.001, 'viewport stays landscape');
+  assert.equal(layout.columns, 2, 'arena and panel stay side by side');
+  if (kind === 'mobile' && orientation === 'portrait') {
+    assert.ok(layout.rotateNotice, 'portrait-held phones show a rotate prompt');
+    return layout;
   }
+  assert.equal(layout.rotateNotice, false, 'landscape play has no rotate prompt');
+  assert.ok(Math.abs(layout.arena.width - layout.arena.height) < 1, 'arena slot is square');
   assert.ok(
     layout.panelFits,
     `${kind} ${orientation}: information panel must fit without scrolling (${JSON.stringify(layout)})`,
@@ -107,7 +102,7 @@ try {
   assert.deepEqual([...desktop.errors, ...phone.errors], []);
   await mobile.close();
   console.log(
-    'PASS: PC landscape composition across window shapes, mobile stacked composition in portrait and held landscape, square arena, no-scroll panel fit, corners, settings and fullscreen.',
+    'PASS: one landscape composition for PC and mobile, portrait-held rotate prompt, square arena, no-scroll panel fit, corners, settings and fullscreen.',
   );
 } finally {
   await browser.close();

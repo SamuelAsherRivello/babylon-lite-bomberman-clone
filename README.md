@@ -94,7 +94,8 @@ $ai-skills-create-game
 
 ## Live Demo
 
-- [**Play Multiplayer Demo**](https://samuelasherrivello.github.io/babylon-lite-bomberman-clone/?mode=online)
+- [**Play Bomberman Clone**](https://samuelasherrivello.github.io/babylon-lite-bomberman-clone/) — local practice
+- [**Play Online Multiplayer**](https://samuelasherrivello.github.io/babylon-lite-bomberman-clone/?mode=online) — create or join a room
 
 ## Images
 
@@ -141,7 +142,7 @@ The client pins the shared release package and defaults to `https://rmc-colyseus
 
 ### Rendering and assets
 
-The viewport uses a 16:9 landscape composition for fine-pointer browsers and a 9:16 stacked composition for coarse-pointer devices, with four outside gutters where space allows. MAP LOW, MED and HIGH use 15×13, 19×15 and 23×17 tiles, or 240×208, 304×240 and 368×272 authored logical pixels. The complete arena remains visible, with menus and pickup meanings in the information panel. Touch movement uses panel swipes and bomb placement uses arena taps. There is no orientation selector. Native DPR-aware rendering, integer CSS pixels per tile, nearest texture sampling and no mipmaps/MSAA preserve sharp artwork; small slots may display the board at fewer pixels per tile. [Rendering details and asset provenance](bomberman-clone/documentation/rendering.md) and [deterministic rules](bomberman-clone/documentation/game-rules.md) describe the implementation. All current game textures are original code-authored pixel art.
+The viewport uses one 16:9 landscape composition on desktop and mobile, with the arena left of the information panel and four outside gutters where space allows. A phone held in portrait asks the player to rotate it. MAP LOW, MED and HIGH use 15×13, 19×15 and 23×17 tiles, or 240×208, 304×240 and 368×272 authored logical pixels. The complete arena remains visible, with menus and pickup meanings in the information panel. Touch movement uses panel swipes and bomb placement uses arena taps. There is no orientation selector. Native DPR-aware rendering, integer CSS pixels per tile, nearest texture sampling and no mipmaps/MSAA preserve sharp artwork; small slots may display the board at fewer pixels per tile. [Rendering details and asset provenance](bomberman-clone/documentation/rendering.md) and [deterministic rules](bomberman-clone/documentation/game-rules.md) describe the implementation. All current game textures are original code-authored pixel art.
 
 ## Battle options and pickups
 
@@ -169,9 +170,9 @@ Explore → propose → apply → verify → sync specifications → archive →
 
 ## Final delivery target
 
-The multiplayer link above opens the live online lobby without installation or credentials. Two independent public browsers verified a first-to-three match and fresh rematch, public assets, endpoint connectivity, controls, scoring and displayed v0.0.5.
+The play links above open the live game without installation or credentials. The online link goes straight to room creation and joining. Two independent public browsers previously verified a first-to-three match and fresh rematch, public assets, endpoint connectivity, controls, and scoring.
 
-Client release uses the existing Release GitHub Actions workflow and `version.txt`. Run the **Release** workflow, then **Deploy to GitHub Pages** for the generated version commit. Pages deploys `bomberman-clone/dist/` under `/babylon-lite-bomberman-clone/`. [Game release v0.0.5](https://github.com/SamuelAsherRivello/babylon-lite-bomberman-clone/releases/tag/v0.0.5) and [pinned shared client v0.9.7](https://github.com/SamuelAsherRivello/rmc-colyseus-multiplayer-server/releases/tag/v0.9.7). WIP v0.0.3 was published immediately for playtesting before final acceptance, as requested.
+Client release uses the existing Release GitHub Actions workflow and `version.txt`. The version commit triggers the GitHub Pages workflow, which deploys `bomberman-clone/dist/` under `/babylon-lite-bomberman-clone/`. See the [latest game release](https://github.com/SamuelAsherRivello/babylon-lite-bomberman-clone/releases/latest) and [pinned shared client v0.9.7](https://github.com/SamuelAsherRivello/rmc-colyseus-multiplayer-server/releases/tag/v0.9.7).
 
 ## Verification
 

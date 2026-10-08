@@ -1,14 +1,14 @@
 # Tasks
 
-## 1. Platform-specific viewport and information panel
+## 1. Landscape viewport and information panel
 
-- [x] 1.1 Update the shared viewport shell and styles to select the PC landscape layout for fine-pointer browsers and the mobile stacked layout for coarse-pointer browsers, preserving the four gutters; verify desktop/mobile layout selection at multiple viewport shapes in `ui-browser.mjs`.
-- [x] 1.2 Reflow practice and online HUD, status, power-up information, settings, instructions, links, version, and corner roles into the shared panel pattern; extend `ui-browser.mjs` to verify the panel is fully visible without scrolling, the arena slot is square, and mobile remains stacked when held in landscape.
+- [x] 1.1 Keep the shared viewport at 16:9 landscape with the arena left of the panel on fine- and coarse-pointer browsers, preserving four gutters; show a rotate notice on portrait-held touch devices and verify both states in `ui-browser.mjs`.
+- [x] 1.2 Reflow practice and online HUD, status, power-up information, settings, instructions, links, version, and corner roles into the shared landscape panel; verify the panel is fully visible without scrolling and the arena slot is square on desktop and landscape-held mobile.
 
 ## 2. Grid-derived integer arena rendering
 
 - [x] 2.1 Update renderer sizing to derive positive integer render dimensions from the active grid, fit the complete board within its slot without crop/stretch/fractional render dimensions, and preserve nearest-sampled edges; verify the LOW, MED, and HIGH boards remain fully visible through `graphics-browser.mjs` at representative slot sizes.
-- [x] 2.2 Update `documentation/rendering.md` with PC/mobile layout selection and logical, render, backing, and display mappings, removing outdated fixed-landscape and fractional-fit claims; verify each documented mapping matches the renderer behavior.
+- [x] 2.2 Update `documentation/rendering.md` with the shared landscape layout, portrait rotation guidance, and logical, render, backing, and display mappings; verify each documented mapping matches the renderer behavior.
 
 ## 3. Touch gesture controls
 
@@ -17,4 +17,4 @@
 
 ## 4. Cross-mode verification
 
-- [ ] 4.1 Verify practice and online modes retain readable HUD, the four corner roles, fullscreen resizing, no-scroll panel fit, and correct PC/mobile composition; run `npm test`, `npm run build`, and `npm run test:browser` where the required backend and Chrome WebGPU environment are available.
+- [x] 4.1 Verify practice and online modes retain readable HUD, the four corner roles, fullscreen resizing, no-scroll panel fit in landscape, and a portrait-held rotate notice; run `npm test`, `npm run build`, and `npm run test:browser` where the required backend and Chrome WebGPU environment are available.

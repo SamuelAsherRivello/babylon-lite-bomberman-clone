@@ -107,6 +107,21 @@ input:focus-visible {
   overflow: hidden;
   container-type: size;
 }
+.orientation-notice {
+  position: absolute;
+  z-index: 10;
+  inset: 0;
+  display: none;
+  align-items: center;
+  justify-content: center;
+  margin: 0;
+  padding: 16px;
+  background: #0e131a;
+  color: #f0d9a2;
+  font-size: 16px;
+  font-weight: 700;
+  text-align: center;
+}
 
 .game-layout {
   position: absolute;
@@ -430,100 +445,95 @@ kbd {
 }
 
 @media (pointer: coarse) {
-  .surface {
-    --view-width: min(100vw, calc(100dvh * 9 / 16));
-    --view-height: calc(var(--view-width) * 16 / 9);
-  }
   .game-layout {
-    grid-template-columns: minmax(0, 1fr);
-    grid-template-rows: minmax(0, 1fr) minmax(0, 1fr);
+    inset: 6px;
+    grid-template-columns: minmax(0, 1.4fr) minmax(0, 1fr);
+    grid-template-rows: minmax(0, 1fr);
     gap: 6px;
   }
   .game-panel {
-    padding: 8px 10px;
-    gap: 6px;
+    padding: 6px;
+    gap: 4px;
   }
   .panel-header {
-    padding-bottom: 6px;
-    gap: 6px;
-  }
-  .panel-footer {
-    padding-top: 5px;
-  }
-  .panel-content {
-    display: grid;
-    grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
-    grid-template-rows: auto minmax(0, 1fr) auto;
-    gap: 5px 10px;
-  }
-  .hud {
-    grid-column: 1 / -1;
-    font-size: 10px;
-  }
-  .legend-rail {
-    grid-column: 1;
-    grid-row: 2;
+    padding-bottom: 4px;
     gap: 5px;
   }
+  .panel-footer {
+    padding-top: 4px;
+  }
+  .panel-content {
+    gap: 5px;
+  }
+  .hud {
+    font-size: 9px;
+    letter-spacing: 0;
+  }
+  .legend-rail {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
+    align-items: start;
+    gap: 6px;
+  }
+  .legend-rail > :only-child {
+    grid-column: 1 / -1;
+  }
+  .battle-options {
+    gap: 3px;
+    font-size: 9px;
+  }
+  .battle-options select {
+    max-width: 75px;
+    padding: 2px;
+  }
+  .powerup-legend {
+    grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
+    gap: 2px 4px;
+    font-size: 8px;
+    line-height: 1.1;
+  }
+  .pickup-icon {
+    flex-basis: 14px;
+    width: 14px;
+    height: 14px;
+  }
   .battle-status {
-    grid-column: 2;
-    grid-row: 2;
     font-size: 9px;
   }
   .scoreboard {
-    gap: 3px 7px;
+    gap: 3px 6px;
     margin-bottom: 3px;
   }
   .instructions {
-    grid-column: 1 / -1;
-    grid-row: 3;
-    margin: 0;
-    font-size: 10px;
+    margin-top: auto;
+    font-size: 9px;
   }
   .instructions span {
     display: none;
   }
   .corner {
-    font-size: 11px;
-  }
-  .corner_top_right {
-    gap: 6px;
-  }
-  .corner_top_right button {
-    padding: 5px 7px;
     font-size: 10px;
   }
+  .corner_top_right {
+    gap: 4px;
+  }
+  .corner_top_right button {
+    padding: 4px 5px;
+    font-size: 9px;
+  }
   .eyebrow {
-    font-size: 8px;
+    font-size: 7px;
     letter-spacing: 1px;
   }
   h1 {
-    font-size: clamp(17px, 4vw, 24px);
+    font-size: 16px;
   }
   h2 {
     margin: 4px 0;
     font-size: 18px;
   }
-  .battle-options {
-    gap: 3px;
-    font-size: 10px;
-  }
-  .battle-options select {
-    max-width: 92px;
-    padding: 3px;
-  }
-  .powerup-legend {
-    gap: 2px;
-    font-size: 9px;
-    line-height: 1.15;
-  }
-  .pickup-icon {
-    flex-basis: 18px;
-    width: 18px;
-    height: 18px;
-  }
   .overlay {
-    padding: 8px;
+    padding: 7px;
     font-size: 10px;
   }
   .overlay p {
@@ -538,97 +548,23 @@ kbd {
     font-size: 9px;
   }
   .corner_bottom_right {
-    font-size: 9px;
-  }
-  .corner_bottom_right span {
-    font-size: 7px;
-  }
-  .settings {
-    bottom: 42px;
-    padding: 8px;
-    font-size: 10px;
-  }
-}
-
-@media (pointer: coarse) and (orientation: landscape) {
-  .surface {
-    --view-width: min(100vw, calc(100dvh * 9 / 16));
-    --view-height: calc(var(--view-width) * 16 / 9);
-  }
-  .game-layout {
-    grid-template-rows: minmax(0, 0.36fr) minmax(0, 1fr);
-  }
-  .game-panel {
-    padding: 5px 12px;
-    gap: 3px;
-  }
-  .panel-header {
-    padding-bottom: 3px;
-  }
-  .panel-footer {
-    padding-top: 3px;
-  }
-  .panel-content {
-    grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
-    grid-template-rows: auto minmax(0, 1fr) auto;
-    gap: 2px 12px;
-  }
-  .hud {
-    grid-column: 1 / -1;
-  }
-  .legend-rail {
-    grid-column: 1;
-    grid-row: 2;
-    display: grid;
-    grid-template-columns: minmax(0, 0.8fr) minmax(0, 1.2fr);
-    align-items: center;
-    gap: 6px;
-  }
-  .battle-options {
-    font-size: 8px;
-  }
-  .powerup-legend {
-    grid-column: 2;
-    grid-row: 1;
-    grid-template-columns: 1fr 1fr;
-    gap: 1px 5px;
-    font-size: 8px;
-  }
-  .pickup-icon {
-    flex-basis: 14px;
-    width: 14px;
-    height: 14px;
-  }
-  .battle-status {
-    grid-column: 2;
-    grid-row: 2;
-    font-size: 8px;
-  }
-  .instructions {
-    grid-column: 1 / -1;
-    grid-row: 3;
-  }
-  .corner_top_right a {
-    display: none;
-  }
-  .corner_top_right button {
-    padding: 3px 6px;
-    font-size: 9px;
-  }
-  .eyebrow {
-    font-size: 7px;
-  }
-  h1 {
-    font-size: 16px;
-  }
-  .corner_bottom_right {
     font-size: 8px;
   }
   .corner_bottom_right span {
     font-size: 6px;
   }
+  .settings {
+    bottom: 38px;
+    padding: 8px;
+    font-size: 10px;
+  }
 }
 
+@media (pointer: coarse) and (orientation: portrait) {
+  .orientation-notice {
+    display: flex;
+  }
+}
 @container (max-width: 620px) {
   .game-layout {
     inset: 7px;
@@ -666,18 +602,12 @@ kbd {
 
 @container (max-width: 360px) {
   .panel-content {
-    display: grid;
-    grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
-    grid-template-rows: auto minmax(0, 1fr) auto;
     gap: 4px;
   }
   .hud {
-    grid-column: 1 / -1;
     font-size: 9px;
   }
   .legend-rail {
-    grid-column: 1;
-    grid-row: 2;
     gap: 4px;
   }
   .battle-options {
@@ -699,17 +629,10 @@ kbd {
     height: 14px;
   }
   .battle-status {
-    grid-column: 2;
-    grid-row: 2;
     font-size: 8px;
   }
   .instructions {
-    grid-column: 1 / -1;
-    grid-row: 3;
     font-size: 9px;
-  }
-  .instructions span {
-    display: none;
   }
   .panel-footer {
     align-items: center;

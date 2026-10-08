@@ -8,7 +8,7 @@ See proposal.md for motivation and specs for observable behavior. `Viewport.jsx`
 
 **Goals:**
 
-- Keep PC and mobile composition consistent with the platform, even when the physical viewport ratio differs from the usual one.
+- Keep one landscape composition on PC and mobile. A portrait-held touch device prompts rotation instead of switching layouts.
 - Let the arena use the largest square slot that leaves enough room for the entire information panel.
 - Keep rendering dimensions integer-valued and preserve the complete grid and hard pixel edges.
 - Support simultaneous arena taps and panel steering gestures without losing keyboard controls or existing UI actions.
@@ -21,13 +21,13 @@ See proposal.md for motivation and specs for observable behavior. `Viewport.jsx`
 
 ## Decisions
 
-### Select composition by platform input class
+### Keep one landscape composition
 
-Use the existing primary-pointer media signal: browsers reporting a coarse primary pointer use the mobile stacked composition; browsers reporting a fine primary pointer use the PC side-by-side composition. Do not select composition from viewport aspect ratio. This builds on an input distinction the project already uses and avoids adding a user setting or device user-agent parser. On hybrid devices, follow the browser's reported primary pointer.
+Use the same 16:9 landscape viewport and side-by-side arena/panel layout for fine- and coarse-pointer browsers. Coarse-pointer media rules may compact typography and spacing without changing orientation or region order. A coarse-pointer device held in portrait displays a rotate-to-landscape notice over the viewport; it does not present a playable portrait layout. Keep keyboard support on hybrid devices and do not add an orientation selector or saved override.
 
 ### Keep one viewport shell and reflow its content
 
-Retain the shared `Viewport` shell and its four gutters. Inside it, give the canvas a square arena slot and arrange the same information-panel sequence beside it for PC and below it for mobile. Apply the same layout contract in practice and online mode while leaving their mode-specific React state and controls in their existing components. Use the available viewport dimensions to size the square slot; on mobile, reserve enough height for the complete panel before maximizing the slot. Compact panel spacing and type to fit; do not add panel scrolling. In a physically landscape mobile window, keep the stacked composition and shrink the arena slot as necessary.
+Retain the shared `Viewport` shell and its four gutters. Inside it, give the canvas a square arena slot and arrange the same information-panel sequence beside it on PC and mobile. Apply the same layout contract in practice and online mode while leaving their mode-specific React state and controls in their existing components. Use the available landscape viewport dimensions to size the square slot. Compact spacing and type on narrow touch devices so the complete panel fits without scrolling.
 
 The four corner roles remain associated with the overall viewport: title at upper left, project links at upper right, settings at lower left, and version at lower right. Place each within the reflowed composition without covering the rendered arena or hiding panel content.
 
@@ -43,8 +43,8 @@ Keep keyboard input in `controls.js`. On mobile, a tap in the canvas area sends 
 
 ## Risks / Trade-offs
 
-- [Risk] A hybrid device may be classified according to an unexpected primary pointer → Follow the browser's primary-pointer report, retain keyboard support, and include coarse- and fine-pointer checks.
-- [Risk] A short mobile viewport can make the square arena small when the complete panel must fit without scrolling → Compact panel spacing and typography first, then reduce the arena slot; verify portrait and physically landscape mobile windows.
+- [Risk] A hybrid device may report an unexpected primary pointer → Pointer class changes only compact styling and gestures; the landscape composition and keyboard support remain stable.
+- [Risk] A short mobile landscape viewport can make the square arena or panel small → Compact panel spacing and typography first, then reduce the arena slot; verify both regions in landscape and the rotation notice in portrait.
 - [Risk] Lower integer rendering resolution can reduce sprite detail → Preserve nearest sampling and full-board visibility, and document the selected mapping.
 - [Risk] Gesture handling can interfere with panel buttons or leave movement active → Apply a swipe threshold, preserve ordinary taps, use pointer capture, and clear input on every release and lifecycle cancellation path.
 
