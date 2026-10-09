@@ -400,7 +400,8 @@ export function stepGame(g, inputs = {}) {
     geometry = [...g.board],
     destroyed = new Set(),
     plantGeometry = new Set(g.plants),
-    cutPlants = new Set();
+    cutPlants = new Set(),
+    activeBlastOrigins = new Set(g.blasts.map((blast) => blast.origin));
   const trace = (bomb, fullRange) => {
     const cells = [index(bomb.x, bomb.y)],
       triggered = [],
@@ -439,26 +440,26 @@ export function stepGame(g, inputs = {}) {
     detonated.set(bomb.id, bomb);
     queue.push(...trace(bomb, false).triggered);
   }
-  if (g.chainReaction && detonated.size >= 2) {
-    // An extended ray can reach another bomb, so expand until no new bombs join this tick.
-    const expanded = new Set();
-    const pending = [...detonated.values()];
-    while (pending.length) {
-      const bomb = pending.shift();
-      if (expanded.has(bomb.id)) continue;
-      expanded.add(bomb.id);
-      for (const other of trace(bomb, true).triggered)
-        if (!detonated.has(other.id)) {
-          detonated.set(other.id, other);
-          pending.push(other);
-        }
-    }
+  const chainReactionHit =
+    g.chainReaction &&
+    [...detonated.values()].some((bomb) => {
+      const result = trace(bomb, false);
+      return (
+        result.triggered.some((other) => detonated.has(other.id)) ||
+        result.cells.some((cell) => activeBlastOrigins.has(cell))
+      );
+    });
+  const chainReactionStarted = Boolean(chainReactionHit);
+  if (chainReactionStarted) {
+    // Once an explosion hits another bomb or an active explosion, every remaining
+    // bomb joins the chain and gets full board-length rays immediately.
+    for (const bomb of g.bombs) detonated.set(bomb.id, bomb);
   }
   for (const bomb of detonated.values()) {
-    const { cells, blocks, plants } = trace(bomb, g.chainReaction && detonated.size >= 2);
+    const { cells, blocks, plants } = trace(bomb, chainReactionStarted);
     for (const cell of blocks) destroyed.add(cell);
     for (const cell of plants) cutPlants.add(cell);
-    g.blasts.push({ id: bomb.id, cells, until: g.tick + 30 });
+    g.blasts.push({ id: bomb.id, origin: index(bomb.x, bomb.y), cells, until: g.tick + 30 });
     g.events.push({ type: 'explosion', bomb: bomb.id, cells });
   }
   for (const i of destroyed) {
