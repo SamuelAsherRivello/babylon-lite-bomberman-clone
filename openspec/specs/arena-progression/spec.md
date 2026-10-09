@@ -50,17 +50,20 @@ A rare boxing-glove pickup SHALL let its collector push bombs for the remainder 
 ### Requirement: Lightning immunity
 A lightning pickup SHALL grant complete invulnerability for ten seconds. The character SHALL flash during the power and blink faster in its final second. Immunity SHALL expire and reset between lives.
 #### Scenario: All lethal sources
-- **WHEN** an immune player touches a blast, plant or closing wall during the ten seconds
+- **WHEN** an immune player touches a blast or closing wall during the ten seconds
 - **THEN** they remain alive and become vulnerable when the duration ends
 #### Scenario: Expiration hint
 - **WHEN** the power has one second remaining
 - **THEN** blinking accelerates until immunity expires
 
 ### Requirement: Optional growing plant
-The main menu SHALL offer a Plant ON/OFF checkbox. ON SHALL create one plant in a random available position, grow into adjacent available cells periodically, kill non-immune players touching it and allow bombs to remove individual segments. OFF SHALL create no plant.
+The main menu SHALL offer a Plant ON/OFF checkbox. ON SHALL create one plant in a random available position, grow into adjacent available cells periodically without occupying a player's collider, block player movement like a wall without causing elimination, and allow bombs to remove individual segments. OFF SHALL create no plant.
 #### Scenario: Growth and cutting
 - **WHEN** growth is due and an explosion reaches a plant segment
 - **THEN** growth occupies only adjacent available cells and the explosion removes the reached segment without clearing the entire connected plant
+#### Scenario: Player meets a plant
+- **WHEN** a player attempts to move into a plant segment or occupies a cell beside a growing plant
+- **THEN** the plant blocks movement without eliminating the player, and growth does not occupy the player's collider
 #### Scenario: Disabled plant
 - **WHEN** a new match starts with Plant OFF
 - **THEN** no plant appears or grows

@@ -3,7 +3,11 @@
 ## Confirmed project overrides
 
 This is the existing Bomberman Clone game, not a new template creation.
-Retain `bomberman-clone/` and its history. Choose landscape only. The user's
+Retain `bomberman-clone/` and its history. This existing game uses a landscape
+composition on PC and a portrait, stacked composition on mobile, including
+when a mobile device is physically held in landscape. Select the composition
+from the browser's primary pointer class; do not show a rotate-to-landscape
+notice or add a player-facing orientation switch. The user's
 original brief explicitly requires original arcade music as well as effects,
 mute and volume; that requirement overrides the template's recommendation
 against music. The user requires the latest stable OpenSpec CLI; retain the
@@ -112,6 +116,16 @@ generated OpenSpec skills. When the resulting project requires OpenSpec, follow
 the authoritative setup and verification procedure in
 [the template usage checklist](AGENTS_TEMPLATE_USAGE_CHECKLIST.md#openspec-setup-when-required).
 Do not hand-edit generated OpenSpec skills.
+
+## Multiplayer test isolation
+
+For AI-driven browser playtests, use a separate local or test multiplayer backend.
+Set `BACKEND_URL=http://127.0.0.1:2568` for browser scripts with `npm run dev`
+and do not target the public multiplayer backend unless the user explicitly
+requests a live test. Local Vite defaults to the local play backend on port
+2567; `server=VITE_LOCAL&serverTest=true` selects its isolated test backend on
+port 2568. A public GitHub Pages client defaults to the live backend. Use the
+`server` URL argument when the test client needs an explicit backend.
 
 ## Pull request workflow
 

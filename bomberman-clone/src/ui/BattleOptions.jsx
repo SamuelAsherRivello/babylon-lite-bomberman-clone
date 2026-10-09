@@ -1,51 +1,77 @@
 import { atlasUrl, ATLAS_COLUMNS, ATLAS_ROWS } from '../content/art.js';
 import { useMemo } from 'react';
-export function BattleOptions({ options, onChange, disabled = false, bombFlash, onBombFlash }) {
+export function BattleOptions({
+  options,
+  onChange,
+  disabled = false,
+  bombFlash,
+  onBombFlash,
+  showChainReaction = true,
+}) {
   return (
     <div className="battle-options">
-      <label>
-        CPU:{' '}
-        <select
-          aria-label="CPU difficulty"
-          value={options.cpu}
+      <div className="battle-options-selects">
+        <label>
+          CPU:{' '}
+          <select
+            aria-label="CPU difficulty"
+            title="Sets how smart the computer-controlled players are: Low, Med, or Hard."
+            value={options.cpu}
+            disabled={disabled}
+            onChange={(e) => onChange({ cpu: e.target.value })}
+          >
+            {['LOW', 'MED', 'HARD'].map((v) => (
+              <option key={v}>{v}</option>
+            ))}
+          </select>
+        </label>
+        <label>
+          MAP:{' '}
+          <select
+            aria-label="Map size"
+            title="Sets the arena size: Low is smallest, Med is larger, and High is largest."
+            value={options.map}
+            disabled={disabled}
+            onChange={(e) => onChange({ map: e.target.value })}
+          >
+            {['LOW', 'MED', 'HIGH'].map((v) => (
+              <option key={v}>{v}</option>
+            ))}
+          </select>
+        </label>
+      </div>
+      <div
+        className={`battle-options-toggles${showChainReaction ? '' : ' battle-options-toggles-two'}`}
+      >
+        <button
+          type="button"
+          aria-pressed={Boolean(options.plant)}
+          title="Starts a creeping plant that grows every five seconds and blocks movement. Bomb blasts cut its segments."
           disabled={disabled}
-          onChange={(e) => onChange({ cpu: e.target.value })}
+          onClick={() => onChange({ plant: !options.plant })}
         >
-          {['LOW', 'MED', 'HARD'].map((v) => (
-            <option key={v}>{v}</option>
-          ))}
-        </select>
-      </label>
-      <label>
-        MAP:{' '}
-        <select
-          aria-label="Map size"
-          value={options.map}
-          disabled={disabled}
-          onChange={(e) => onChange({ map: e.target.value })}
+          Creeping Death: {options.plant ? 'On' : 'Off'}
+        </button>
+        {showChainReaction && (
+          <button
+            type="button"
+            aria-pressed={Boolean(options.chainReaction)}
+            title="When multiple bombs explode together, their blasts extend across the arena and can trigger more bombs."
+            disabled={disabled}
+            onClick={() => onChange({ chainReaction: !options.chainReaction })}
+          >
+            Chain Reaction: {options.chainReaction ? 'On' : 'Off'}
+          </button>
+        )}
+        <button
+          type="button"
+          aria-pressed={Boolean(bombFlash)}
+          title="Makes bombs flash twice just before they explode. This visual setting does not change their timing."
+          onClick={() => onBombFlash(!bombFlash)}
         >
-          {['LOW', 'MED', 'HIGH'].map((v) => (
-            <option key={v}>{v}</option>
-          ))}
-        </select>
-      </label>
-      <label>
-        <input
-          type="checkbox"
-          checked={options.plant}
-          disabled={disabled}
-          onChange={(e) => onChange({ plant: e.target.checked })}
-        />{' '}
-        Plant: {options.plant ? 'ON' : 'OFF'}
-      </label>
-      <label>
-        <input
-          type="checkbox"
-          checked={bombFlash}
-          onChange={(e) => onBombFlash(e.target.checked)}
-        />{' '}
-        Bomb Flash: {bombFlash ? 'ON' : 'OFF'}
-      </label>
+          Bomb Flash: {bombFlash ? 'On' : 'Off'}
+        </button>
+      </div>
     </div>
   );
 }
@@ -70,7 +96,7 @@ export function PowerupLegend() {
             }}
           />
           <span>
-            <strong>{name}</strong> {meaning}
+            <strong>{name}</strong> <span className="pickup-meaning">{meaning}</span>
           </span>
         </div>
       ))}

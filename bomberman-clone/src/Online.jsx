@@ -5,32 +5,48 @@ import { createGameRenderer } from './content/renderer.js';
 import { createControls, createGestureHandlers } from './input/controls.js';
 import { createGame } from './game/rules.js';
 import { createRoomInvite } from './game/invite-link.js';
+import { resolveMultiplayerServer } from './game/server-url.js';
 import versionText from '../../version.txt?raw';
 import { Viewport } from './ui/Viewport.jsx';
+import { ArenaPlayers } from './ui/ArenaPlayers.jsx';
+import { TopNav } from './ui/TopNav.jsx';
 import { AudioSettings, useArcadeAudio } from './ui/AudioSettings.jsx';
+import {
+  clearLocalStorage,
+  loadBattleOptions,
+  loadBombFlash,
+  saveBattleOptions,
+  saveBombFlash,
+} from './ui/preferences.js';
 
-export const SERVER =
-  import.meta.env.VITE_MULTIPLAYER_URL ||
-  import.meta.env.VITE_MULTIPLAYER_SERVER ||
-  'https://rmc-colyseus-multiplayer-server.vercel.app';
+const serverTarget = resolveMultiplayerServer(
+  window.location.search,
+  import.meta.env.VITE_MULTIPLAYER_URL,
+  import.meta.env.VITE_MULTIPLAYER_SERVER,
+  import.meta.env.DEV,
+  import.meta.env.VITE_MULTIPLAYER_TEST_URL,
+);
+export const SERVER = serverTarget.url;
 import { BattleOptions, PowerupLegend } from './ui/BattleOptions.jsx';
-import { DeathView } from './game/death-view.js';
 const COLORS = ['Mint', 'Amber', 'Violet', 'Rose'];
 
-export function Online({ onExit }) {
+export function Online({ aspect, onExit, onAspectChange }) {
   const sound = useArcadeAudio();
-  const death = useRef(new DeathView()),
-    [frozen, setFrozen] = useState(false);
-  const [bombFlash, setBombFlash] = useState(
-      () => localStorage.getItem('bomberman-bomb-flash') !== 'off',
-    ),
+  const [bombFlash, setBombFlash] = useState(loadBombFlash),
     flash = useRef(bombFlash);
   const changeFlash = (value) => {
     flash.current = value;
     setBombFlash(value);
-    localStorage.setItem('bomberman-bomb-flash', value ? 'on' : 'off');
+    saveBombFlash(value);
+  };
+  const clearSettings = () => {
+    clearLocalStorage();
+    flash.current = true;
+    setBombFlash(true);
+    setClearMessage('Local storage cleared.');
   };
   const [shareMessage, setShareMessage] = useState('');
+  const [clearMessage, setClearMessage] = useState('');
   const canvas = useRef(null),
     client = useRef(null),
     controls = useRef(null),
@@ -39,6 +55,7 @@ export function Online({ onExit }) {
     menu = useRef(false);
   if (!gestures.current) gestures.current = createGestureHandlers(controls);
   const [session, setSession] = useState({ status: 'idle' }),
+    [waitingRound, setWaitingRound] = useState(null),
     [code, setCode] = useState(
       () =>
         new URLSearchParams(window.location.search)
@@ -59,7 +76,7 @@ export function Online({ onExit }) {
       seq = 0,
       pendingBomb = false,
       inputRound = null,
-      wasFrozen = false;
+      wasAlive = false;
     const input = createControls();
     controls.current = input;
     let inputEpoch = input.epoch;
@@ -71,20 +88,25 @@ export function Online({ onExit }) {
       sendElapsed += dt;
       const c = client.current,
         id = c?.state.sessionId;
-      const nextRound = view.current.state?.round;
+      const nextRound = view.current.state?.round,
+        alive = view.current.state?.players.find((p) => p.id === id)?.alive === true;
       if (nextRound !== inputRound) {
         input.clear();
         pendingBomb = false;
         inputRound = nextRound;
       }
+      if (wasAlive && !alive) {
+        input.clear();
+        pendingBomb = false;
+      }
+      wasAlive = alive;
       while (accumulator >= 1 / 60) {
         if (inputEpoch !== input.epoch) {
           pendingBomb = false;
           inputEpoch = input.epoch;
           sendElapsed = 0.05;
         }
-        const active =
-          c?.state.status === 'connected' && !menu.current && !death.current.frozen(now);
+        const active = c?.state.status === 'connected' && alive && !menu.current;
         const read = input.read();
         const command = active ? read : { x: 0, y: 0, bomb: false };
         if (!active) pendingBomb = false;
@@ -99,16 +121,8 @@ export function Online({ onExit }) {
         accumulator -= 1 / 60;
       }
       const drawn = view.current.draw(id, dt) || createGame([]);
-      const shown = death.current.draw(drawn, id, now),
-        held = death.current.frozen(now);
-      if (held && !wasFrozen) {
-        input.clear();
-        pendingBomb = false;
-      }
-      wasFrozen = held;
-      setFrozen(held);
-      shown.bombFlash = flash.current;
-      renderer.draw(shown);
+      drawn.bombFlash = flash.current;
+      renderer.draw(drawn);
       sound.audio.current?.observe(view.current.state);
       frame = requestAnimationFrame(loop);
     };
@@ -136,15 +150,25 @@ export function Online({ onExit }) {
     };
   }, []);
   const connect = (options) => {
+    if (serverTarget.error) {
+      setSession({ status: 'error', error: serverTarget.error });
+      return;
+    }
     client.current?.disconnect();
     view.current = new ReconciledView();
-    death.current.reset();
-    setFrozen(false);
+    setWaitingRound(null);
     controls.current?.clear();
     const c = new MultiplayerClient(SERVER, 'bomberman', options);
     client.current = c;
+    let admissionChecked = false;
     c.subscribe((s, event) => {
       if (client.current !== c) return;
+      if (event === 'snapshot' && s.gameState && !admissionChecked) {
+        admissionChecked = true;
+        const joinedActor = s.gameState.players.find((p) => p.id === s.sessionId);
+        if (['countdown', 'playing', 'results'].includes(s.gameState.phase) && !joinedActor?.alive)
+          setWaitingRound(s.gameState.round);
+      }
       if (s.gameState && ['snapshot', 'gameState'].includes(event))
         view.current.accept(s.gameState, s.sessionId);
       setSession({ ...s });
@@ -158,11 +182,18 @@ export function Online({ onExit }) {
   const toggleSettings = () => {
     menu.current = !menu.current;
     controls.current?.clear();
+    setClearMessage('');
     setSettings(menu.current);
   };
   const g = session.gameState,
     me = g?.people.find((p) => p.id === session.sessionId),
-    actor = g?.players.find((p) => p.id === session.sessionId);
+    actor = g?.players.find((p) => p.id === session.sessionId),
+    joinedMidRound = me && waitingRound === g?.round,
+    waitingForRound = joinedMidRound && !actor?.alive && ['countdown', 'playing'].includes(g.phase),
+    rematchWait =
+      g?.phase === 'matchResults' && Number.isFinite(g.serverTick) && Number.isFinite(g.resultAt)
+        ? Math.max(0, Math.ceil((180 - (g.serverTick - g.resultAt)) / 60))
+        : 0;
   const invite = g ? createRoomInvite(window.location.href, import.meta.env.BASE_URL, g.code) : '';
   const share = async () => {
     try {
@@ -173,29 +204,35 @@ export function Online({ onExit }) {
     }
   };
   return (
-    <Viewport>
-      <div className="game-layout">
+    <Viewport aspect={aspect}>
+      <div
+        className="game-layout"
+        style={{
+          '--arena-columns': g?.width ?? 15,
+          '--arena-rows': g?.height ?? 13,
+        }}
+      >
         <div className="arena-slot">
-          <div className="arena-square" data-render-area {...gestures.current.arena}>
-            <canvas ref={canvas} aria-label="Online Bomberman arena" />
-          </div>
+          <ArenaPlayers
+            players={g?.people}
+            canvas={canvas}
+            gestures={gestures.current}
+            arenaLabel="Online Bomberman arena"
+            mapWidth={g?.width}
+            mapHeight={g?.height}
+            localPlayerColor={me?.color}
+          />
         </div>
-        <section className="game-panel" data-information-panel {...gestures.current.panel}>
+        <section
+          className="game-panel online-game-panel"
+          data-information-panel
+          {...gestures.current.panel}
+        >
           <header className="panel-header">
             <header className="corner corner_top_left">
-              <span className="eyebrow">ARCADE / ONLINE BATTLE</span>
               <h1>Bomberman Clone</h1>
             </header>
-            <nav className="corner corner_top_right">
-              <button onClick={onExit}>Local practice</button>
-              <a
-                href="https://github.com/SamuelAsherRivello/babylon-lite-bomberman-clone"
-                target="_blank"
-                rel="noreferrer"
-              >
-                GitHub ↗
-              </a>
-            </nav>
+            <TopNav online aspect={aspect} onModeChange={onExit} onAspectChange={onAspectChange} />
           </header>
           <div className="panel-content">
             {g && (
@@ -205,7 +242,7 @@ export function Online({ onExit }) {
                 </span>
                 <span>
                   {g.phase === 'playing'
-                    ? `${Math.ceil(g.remaining)}s · ${actor?.alive ? 'ALIVE' : 'SPECTATING'}`
+                    ? `${Math.ceil(g.remaining)}s · ${waitingForRound ? 'WAITING' : actor?.alive ? 'ALIVE' : 'SPECTATING'}`
                     : g.phase.toUpperCase()}
                 </span>
               </div>
@@ -290,9 +327,15 @@ export function Online({ onExit }) {
               <h2>Room {g.code}</h2>
               <p>Four fighters: humans fill CPU seats. Every human readies up.</p>
               <BattleOptions
-                options={g.options || { cpu: 'MED', map: 'LOW', plant: false }}
+                options={
+                  g.options || { cpu: 'MED', map: 'LOW', plant: false, chainReaction: false }
+                }
+                showChainReaction={Object.hasOwn(g.options || {}, 'chainReaction')}
                 disabled={g.hostId !== session.sessionId}
-                onChange={(options) => client.current?.send('options', options)}
+                onChange={(patch) => {
+                  saveBattleOptions({ ...loadBattleOptions(), ...g.options, ...patch });
+                  client.current?.send('options', patch);
+                }}
                 bombFlash={bombFlash}
                 onBombFlash={changeFlash}
               />
@@ -329,23 +372,35 @@ export function Online({ onExit }) {
               </button>
             </div>
           )}
-          {session.status === 'connected' && g?.phase === 'countdown' && (
+          {session.status === 'connected' && waitingForRound && !rendererError && (
+            <div className="overlay" role="status">
+              <h2>Waiting for the next round</h2>
+              <p>
+                This round is already in progress. You’ll join the arena when the next round starts.
+              </p>
+            </div>
+          )}
+          {session.status === 'connected' && g?.phase === 'countdown' && !waitingForRound && (
             <div className="overlay">
               <h2>{Math.ceil(g.remaining)}</h2>
               <p>Place your bomb. Find your escape.</p>
             </div>
           )}
-          {session.status === 'connected' && g?.phase === 'results' && !frozen && (
+          {session.status === 'connected' && g?.phase === 'results' && (
             <div className="overlay">
               <h2>
                 {g.winner
                   ? `${COLORS[g.people.find((p) => p.id === g.winner)?.color] || 'Player'} wins!`
                   : 'Draw!'}
               </h2>
-              <p>Next round in {Math.ceil(g.remaining)}… Upgrades reset; scores stay.</p>
+              <p>
+                {joinedMidRound && !actor?.alive
+                  ? `You join the next round in ${Math.ceil(g.remaining)}…`
+                  : `Next round in ${Math.ceil(g.remaining)}… Upgrades reset; scores stay.`}
+              </p>
             </div>
           )}
-          {session.status === 'connected' && g?.phase === 'matchResults' && !frozen && (
+          {session.status === 'connected' && g?.phase === 'matchResults' && (
             <div className="overlay">
               <h2>
                 {COLORS[g.people.find((p) => p.id === g.matchWinner)?.color] || 'Player'} takes the
@@ -359,30 +414,40 @@ export function Online({ onExit }) {
                   </li>
                 ))}
               </ul>
-              <button onClick={() => client.current?.send('rematch')}>
-                {me?.ready ? 'Cancel rematch' : 'Ready for rematch'}
+              <button disabled={rematchWait > 0} onClick={() => client.current?.send('rematch')}>
+                {rematchWait > 0
+                  ? `Ready for rematch in ${rematchWait}s`
+                  : me?.ready
+                    ? 'Cancel rematch'
+                    : 'Ready for rematch'}
               </button>
             </div>
           )}
           {settings && (
-            <div className="overlay">
-              <h2>Settings</h2>
-              <p>The online battle continues while this menu is open.</p>
-              <AudioSettings sound={sound} />
-              <button onClick={toggleSettings}>Resume</button>
-              <button onClick={() => document.documentElement.requestFullscreen()?.catch(() => {})}>
-                Fullscreen
-              </button>
-              {invite && (
-                <>
-                  <p>
-                    <button onClick={share}>Copy room link</button>
-                  </p>
-                  <p className="share-message" role="status">
-                    {shareMessage}
-                  </p>
-                </>
-              )}
+            <div className="overlay settings-overlay">
+              <div className="settings-content">
+                <h2>Settings</h2>
+                <p>The online battle continues while this menu is open.</p>
+                <AudioSettings sound={sound} />
+                <button onClick={clearSettings}>Clear Local Storage</button>
+                {clearMessage && <p role="status">{clearMessage}</p>}
+                <button onClick={toggleSettings}>Resume</button>
+                <button
+                  onClick={() => document.documentElement.requestFullscreen()?.catch(() => {})}
+                >
+                  Fullscreen
+                </button>
+                {invite && (
+                  <>
+                    <p>
+                      <button onClick={share}>Copy room link</button>
+                    </p>
+                    <p className="share-message" role="status">
+                      {shareMessage}
+                    </p>
+                  </>
+                )}
+              </div>
             </div>
           )}
         </section>

@@ -1,10 +1,12 @@
 import { chromium } from '@playwright/test';
 import { MultiplayerClient } from '@rmc/multiplayer-client';
 import assert from 'node:assert/strict';
+import { requireBrowserBackend } from './browser-backend.mjs';
 
 // Real-time production rules: both players remain at mirrored corners until
 // the first sudden-death wave crushes them together. No fixture inputs or
 // altered clock, position, bomb fuse, or round duration are used.
+const backend = requireBrowserBackend();
 const browser = await chromium.launch({
   channel: 'chrome',
   headless: true,
@@ -18,6 +20,7 @@ try {
   );
   url.searchParams.set('mode', 'online');
   url.searchParams.set('mute', '1');
+  url.searchParams.set('server', backend);
   const a = await (await browser.newContext()).newPage(),
     b = await (await browser.newContext()).newPage();
   for (const page of [a, b]) {
@@ -31,11 +34,7 @@ try {
   await b.getByRole('button', { name: 'Join room', exact: true }).click();
   await b.getByRole('heading', { name: title, exact: true }).waitFor();
   for (let n = 0; n < 2; n++) {
-    const c = new MultiplayerClient(
-      process.env.BACKEND_URL || 'https://rmc-colyseus-multiplayer-server.vercel.app',
-      'bomberman',
-      { code: title.slice(5) },
-    );
+    const c = new MultiplayerClient(backend, 'bomberman', { code: title.slice(5) });
     helpers.push(c);
     void c.connect();
     const end = Date.now() + 15000;

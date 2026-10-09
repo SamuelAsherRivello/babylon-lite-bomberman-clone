@@ -8,15 +8,18 @@ test('project identity, layout and production subpath', async () => {
   assert.equal(config.root, 'bomberman-clone');
   const page = await readFile(new URL('../index.html', import.meta.url), 'utf8');
   assert.match(page, /<title>Bomberman Clone<\/title>/);
-  const app = await readFile(new URL('../src/App.jsx', import.meta.url), 'utf8');
+  const [app, nav] = await Promise.all([
+    readFile(new URL('../src/App.jsx', import.meta.url), 'utf8'),
+    readFile(new URL('../src/ui/TopNav.jsx', import.meta.url), 'utf8'),
+  ]);
   for (const corner of [
     'corner_top_left',
     'corner_top_right',
     'corner_bottom_left',
     'corner_bottom_right',
   ])
-    assert.ok(app.includes(corner));
-  assert.ok(app.includes('SamuelAsherRivello/babylon-lite-bomberman-clone'));
+    assert.ok(app.includes(corner) || nav.includes(corner));
+  assert.ok(nav.includes('SamuelAsherRivello/babylon-lite-bomberman-clone'));
   assert.ok(app.includes('versionText'));
 });
 test('pixel presentation uses integer grid-derived render dimensions for every map size', () => {

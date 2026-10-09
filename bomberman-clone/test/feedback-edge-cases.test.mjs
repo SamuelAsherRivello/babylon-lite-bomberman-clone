@@ -1,17 +1,23 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import { readFileSync } from 'node:fs';
-import { format } from 'prettier';
 import { createGame, stepGame, placeBomb, index } from '../src/game/rules.js';
+import {
+  createGame as createReleasedGame,
+  stepGame as stepReleasedGame,
+} from '@rmc/multiplayer-client/bomberman';
 import { createControls, createGestureHandlers } from '../src/input/controls.js';
-test('installed immutable client has exactly the same deterministic rules as practice', async () => {
-  const local = readFileSync(new URL('../src/game/rules.js', import.meta.url), 'utf8');
-  const released = readFileSync(
-    new URL(import.meta.resolve('@rmc/multiplayer-client/bomberman')),
-    'utf8',
-  );
-  const options = { parser: 'babel', singleQuote: true, printWidth: 100 };
-  assert.equal(await format(released, options), await format(local, options));
+test('plant-off outcomes stay compatible with the pinned multiplayer client', () => {
+  const local = createGame(['a', 'b'], 42, 'MED');
+  const released = createReleasedGame(['a', 'b'], 42, 'MED');
+  for (let tick = 0; tick < 240; tick++) {
+    const inputs = {
+      a: { x: tick < 80 ? 1 : 0, y: tick >= 80 && tick < 160 ? 1 : 0, bomb: tick === 90 },
+      b: { x: tick < 60 ? -1 : 0, bomb: tick === 120 },
+    };
+    stepGame(local, inputs);
+    stepReleasedGame(released, inputs);
+    assert.deepEqual(local, released);
+  }
 });
 test('uppercase press and lowercase release, Shift keys and blur clear controls', () => {
   const old = globalThis.window,
@@ -155,7 +161,7 @@ test('lightning refreshes, escapes overlapped closed walls and resets in a fresh
   assert.ok(p.alive);
   assert.equal(createGame().players[0].shieldUntil, 0);
 });
-test('plant growth excludes bombs, solid terrain and active flames and contact eliminates', () => {
+test('plant growth excludes bombs, solid terrain, active flames and occupied player cells', () => {
   const g = createGame();
   g.board.fill(0);
   g.plantEnabled = true;
@@ -164,10 +170,14 @@ test('plant growth excludes bombs, solid terrain and active flames and contact e
   g.board[index(4, 5)] = 2;
   g.bombs = [{ id: 1, owner: 'practice', x: 6, y: 5, range: 1, deadline: 150, pass: [] }];
   g.blasts = [{ id: 2, cells: [index(5, 4)], until: 30 }];
-  stepGame(g);
-  assert.deepEqual(g.plants, [index(5, 5), index(5, 6)]);
   g.players[0].x = 5.5;
   g.players[0].y = 6.5;
   stepGame(g);
-  assert.equal(g.players[0].alive, false);
+  assert.deepEqual(g.plants, [index(5, 5)]);
+  assert.equal(g.players[0].alive, true);
+  g.players[0].x = 1.5;
+  g.players[0].y = 1.5;
+  g.nextPlantTick = 2;
+  stepGame(g);
+  assert.deepEqual(g.plants, [index(5, 5), index(5, 6)]);
 });

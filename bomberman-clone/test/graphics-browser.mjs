@@ -13,6 +13,7 @@ try {
     process.env.GAME_URL || 'http://127.0.0.1:5180/babylon-lite-bomberman-clone/',
   );
   url.searchParams.set('mute', '1');
+  url.searchParams.set('mode', 'offline');
   await page.goto(url.href);
   await page.getByText('Starting Babylon Lite…').waitFor({ state: 'hidden' });
   await page.evaluate(async () => {

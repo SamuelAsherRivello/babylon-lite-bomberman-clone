@@ -3,7 +3,11 @@ export const ATLAS_ROWS = 2;
 export const ACTOR_FRAME = 16;
 
 // Original 16px artwork: four workshop couriers, twelve poses per courier.
-export function atlasUrl() {
+let atlasCanvas;
+const actorSprites = new Map();
+
+function getAtlasCanvas() {
+  if (atlasCanvas) return atlasCanvas;
   const canvas = document.createElement('canvas');
   canvas.width = ATLAS_COLUMNS * 16;
   canvas.height = ATLAS_ROWS * 16;
@@ -131,5 +135,34 @@ export function atlasUrl() {
         rect(f, 9, 13 + (pose === 2 ? 1 : 0), 4, 2, '#172231');
       }
   });
-  return canvas.toDataURL();
+  atlasCanvas = canvas;
+  return canvas;
+}
+
+export function atlasUrl() {
+  return getAtlasCanvas().toDataURL();
+}
+
+export function actorSpriteUrl(color) {
+  if (actorSprites.has(color)) return actorSprites.get(color);
+  const frame = ACTOR_FRAME + color * 12;
+  const canvas = document.createElement('canvas');
+  canvas.width = 16;
+  canvas.height = 16;
+  canvas
+    .getContext('2d')
+    .drawImage(
+      getAtlasCanvas(),
+      (frame % ATLAS_COLUMNS) * 16,
+      Math.floor(frame / ATLAS_COLUMNS) * 16,
+      16,
+      16,
+      0,
+      0,
+      16,
+      16,
+    );
+  const url = canvas.toDataURL();
+  actorSprites.set(color, url);
+  return url;
 }

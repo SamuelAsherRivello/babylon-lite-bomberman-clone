@@ -1,15 +1,18 @@
 import { chromium, expect } from '@playwright/test';
 import { MultiplayerClient } from '@rmc/multiplayer-client';
 import assert from 'node:assert/strict';
+import { requireBrowserBackend } from './browser-backend.mjs';
+const backend = requireBrowserBackend();
 const browser = await chromium.launch({
     channel: 'chrome',
     headless: true,
     args: ['--enable-unsafe-webgpu'],
   }),
   clients = [];
-const url =
-  process.env.GAME_URL ||
-  'https://samuelasherrivello.github.io/babylon-lite-bomberman-clone/?mode=online&mute=1';
+const url = new URL(process.env.GAME_URL || 'http://127.0.0.1:5173/babylon-lite-bomberman-clone/');
+url.searchParams.set('mode', 'online');
+url.searchParams.set('mute', '1');
+url.searchParams.set('server', backend);
 async function until(fn) {
   const end = Date.now() + 15000;
   while (!fn()) {
@@ -19,7 +22,7 @@ async function until(fn) {
 }
 try {
   const a = await browser.newPage({ viewport: { width: 1440, height: 900 } });
-  await a.goto(url);
+  await a.goto(url.href);
   await a.getByRole('button', { name: 'Create room', exact: true }).click();
   const heading = a.getByRole('heading', { name: /^Room [A-Z0-9]{6}$/ });
   await heading.waitFor();
@@ -32,17 +35,16 @@ try {
   await expect(a.getByLabel('CPU difficulty')).toHaveValue('HARD');
   await a.getByLabel('Map size').selectOption('HIGH');
   await expect(a.getByLabel('Map size')).toHaveValue('HIGH');
-  await a.getByLabel('Plant:').click();
-  await expect(a.getByLabel('Plant:')).toBeChecked();
+  await a.getByRole('button', { name: 'Creeping Death: Off' }).click();
+  await expect(a.getByRole('button', { name: 'Creeping Death: On' })).toHaveAttribute(
+    'aria-pressed',
+    'true',
+  );
   await a.getByRole('button', { name: 'Ready up', exact: true }).click();
   await a.getByText(/s · ALIVE/).waitFor();
   assert.equal((await a.locator('.scoreboard').innerText()).match(/CPU/g).length, 3);
   for (let n = 2; n <= 4; n++) {
-    const c = new MultiplayerClient(
-      'https://rmc-colyseus-multiplayer-server.vercel.app',
-      'bomberman',
-      { code },
-    );
+    const c = new MultiplayerClient(backend, 'bomberman', { code });
     clients.push(c);
     void c.connect();
     await until(
@@ -59,7 +61,7 @@ try {
     assert.ok(g.plantEnabled && g.plants.length >= 1);
   }
   console.log(
-    'PASS public solo start with three CPUs, all four human/CPU mixes, live takeover, HIGH map and authoritative HARD/Plant settings.',
+    'PASS solo start with three CPUs, all four human/CPU mixes, live takeover, HIGH map and authoritative HARD/Plant settings.',
   );
 } finally {
   clients.forEach((c) => c.disconnect());

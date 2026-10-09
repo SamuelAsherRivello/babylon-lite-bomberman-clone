@@ -1,4 +1,4 @@
-import { stepGame } from '@rmc/multiplayer-client/bomberman';
+import { stepGame } from './rules.js';
 
 export function predictMovement(state, id, input) {
   const snapshot = structuredClone(state);
@@ -93,6 +93,7 @@ export class ReconciledView {
         y = Math.floor(local.y);
       if (
         !this.state.board[y * (this.state.width || 15) + x] &&
+        !this.state.plants?.includes(y * (this.state.width || 15) + x) &&
         !this.state.bombs.some((b) => b.x === x && b.y === y) &&
         !this.ghosts.some((b) => b.x === x && b.y === y)
       )

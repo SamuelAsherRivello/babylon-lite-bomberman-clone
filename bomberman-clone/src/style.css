@@ -28,6 +28,22 @@ button {
 button:hover {
   background: #36544c;
 }
+.nav-control {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  padding: 8px 12px;
+  border: 1px solid #496461;
+  border-radius: 6px;
+  background: #24353a;
+  color: #eceddc;
+  font: inherit;
+  line-height: 1.2;
+  white-space: nowrap;
+}
+.nav-control:hover {
+  background: #36544c;
+}
 button:disabled {
   opacity: 0.45;
   cursor: default;
@@ -70,6 +86,10 @@ input:focus-visible {
   overflow: hidden;
   background: #0b131b;
 }
+.surface[data-aspect='portrait'] {
+  --view-width: min(100vw, calc(100dvh * 9 / 16));
+  --view-height: calc(var(--view-width) * 16 / 9);
+}
 .gutter {
   min-width: 0;
   min-height: 0;
@@ -109,11 +129,14 @@ input:focus-visible {
 }
 
 .game-layout {
+  --arena-columns: 15;
+  --arena-rows: 13;
+  --layout-inset: clamp(10px, 1.3vw, 22px);
+  --layout-gap: clamp(12px, 1.8vw, 28px);
   position: absolute;
-  inset: clamp(10px, 1.3vw, 22px);
+  inset: var(--layout-inset);
   display: grid;
-  grid-template-columns: minmax(0, 1.7fr) minmax(290px, 1fr);
-  gap: clamp(12px, 1.8vw, 28px);
+  gap: var(--layout-gap);
   min-width: 0;
   min-height: 0;
 }
@@ -124,10 +147,85 @@ input:focus-visible {
   min-height: 0;
   container-type: size;
 }
-.arena-square {
+.arena-stage {
+  --tile-pixels: round(
+    down,
+    min(calc(100cqw / var(--board-columns)), calc(100cqh / var(--board-rows))),
+    1px
+  );
+  --board-inset: 0px;
   position: relative;
-  width: min(100cqw, 100cqh);
-  height: min(100cqw, 100cqh);
+  width: calc(var(--tile-pixels) * var(--board-columns));
+  height: calc(var(--tile-pixels) * var(--board-rows));
+  min-width: 0;
+  container-type: size;
+}
+.arena-label-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 6px;
+  min-width: 0;
+  position: absolute;
+  left: 0;
+  right: 0;
+  height: var(--tile-pixels);
+  z-index: 1;
+  pointer-events: none;
+}
+.arena-label-row:first-child {
+  top: 0;
+  align-items: center;
+}
+.arena-label-row:last-child {
+  bottom: 0;
+  align-items: center;
+}
+.player-label {
+  box-sizing: border-box;
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  height: calc(var(--tile-pixels) * 0.648);
+  max-width: calc(50% - 3px);
+  max-height: calc(var(--tile-pixels) * 0.648);
+  min-width: 0;
+  overflow: hidden;
+  padding: 0 clamp(5px, 0.8cqw, 12px);
+  color: #eceddc;
+  background: #24353a;
+  border: 1px solid #496461;
+  border-radius: 6px;
+  font: inherit;
+  font-size: clamp(10px, 1.5cqw, 16px);
+  white-space: nowrap;
+  box-shadow: 1px 1px 2px rgb(0 0 0 / 50%);
+}
+.player-label-local {
+  border: 1px solid #f0d9a2;
+}
+.arena-label-row .player-label:first-child {
+  margin-left: 8px;
+}
+.arena-label-row .player-label:last-child {
+  margin-right: 8px;
+}
+.player-label img {
+  width: min(24px, calc((var(--tile-pixels) - 4px) * 0.512));
+  height: min(24px, calc((var(--tile-pixels) - 4px) * 0.512));
+  flex: none;
+  image-rendering: pixelated;
+}
+.player-label span {
+  margin-right: 1.2em;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+.arena-square {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
   container-type: size;
   touch-action: none;
 }
@@ -166,11 +264,19 @@ input:focus-visible {
 .panel-header {
   border-bottom: 1px solid #283a36;
   padding-bottom: 10px;
+  align-items: center;
+  gap: clamp(2px, 1.3cqw, 12px);
+  flex-wrap: wrap;
 }
 .panel-footer {
   align-items: flex-end;
   border-top: 1px solid #283a36;
   padding-top: 8px;
+}
+.online-game-panel .panel-header,
+.online-game-panel .panel-footer {
+  position: relative;
+  z-index: 5;
 }
 .corner {
   position: static;
@@ -179,13 +285,32 @@ input:focus-visible {
   font-size: 13px;
 }
 .corner_top_left {
-  flex: 1 1 auto;
+  flex: 0 1 auto;
 }
 .corner_top_right {
   display: flex;
   align-items: center;
-  gap: 10px;
-  flex: 0 0 auto;
+  justify-content: flex-end;
+  flex: 1 1 auto;
+  flex-wrap: wrap;
+  gap: clamp(2px, 0.7cqw, 8px);
+}
+.panel-header h1 {
+  margin: 0;
+  font-size: clamp(9px, 3.5cqw, 30px);
+  white-space: nowrap;
+}
+.panel-header .nav-control {
+  padding: clamp(2px, 0.5cqw, 6px) clamp(2px, 0.65cqw, 8px);
+  font-size: clamp(9px, 1.5cqw, 13px);
+}
+@container (max-width: 380px) {
+  .panel-header {
+    gap: 2px;
+  }
+  .panel-header .corner_top_right {
+    gap: 2px;
+  }
 }
 .corner_bottom_left {
   display: flex;
@@ -208,9 +333,7 @@ input:focus-visible {
   letter-spacing: 2px;
 }
 h1 {
-  margin: 4px 0 0;
   color: #f0d9a2;
-  font-size: clamp(20px, 2.2vw, 34px);
   letter-spacing: -1px;
   line-height: 1.1;
 }
@@ -252,13 +375,54 @@ h2 {
   gap: 7px;
   font-size: 12px;
 }
-.battle-options label {
+.battle-options-selects,
+.battle-options-toggles {
+  display: grid;
+  gap: 6px;
+  min-width: 0;
+}
+.battle-options-selects {
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+}
+.battle-options-toggles {
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+}
+.battle-options-toggles-two {
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+}
+.battle-options-selects label {
   display: flex;
   align-items: center;
   justify-content: space-between;
-  gap: 8px;
+  gap: 4px;
+  min-width: 0;
+}
+.battle-options-toggles button,
+.overlay .battle-options-toggles button {
+  width: 100%;
+  min-width: 0;
+  margin: 0;
+  padding: 6px 3px;
+  border: 1px solid #a66059;
+  background: #84342f;
+  color: #fff7ee;
+  font: inherit;
+  font-weight: 700;
+  line-height: 1.15;
+  white-space: normal;
+}
+.battle-options-toggles button[aria-pressed='true'],
+.overlay .battle-options-toggles button[aria-pressed='true'] {
+  border-color: #72c593;
+  background: #206b48;
+}
+.battle-options-toggles button:hover:not(:disabled),
+.overlay .battle-options-toggles button:hover:not(:disabled) {
+  filter: brightness(1.18);
 }
 .battle-options select {
+  min-width: 0;
+  max-width: 100%;
   font: inherit;
   color: inherit;
   background: #24353a;
@@ -378,6 +542,10 @@ kbd {
   display: block;
   margin: 6px 0;
 }
+.overlay .battle-options label {
+  display: flex;
+  margin: 0;
+}
 .overlay input {
   width: 110px;
   margin-left: 8px;
@@ -388,25 +556,23 @@ kbd {
   font: inherit;
   letter-spacing: 2px;
 }
-.settings {
-  position: absolute;
+.settings-overlay {
   z-index: 6;
-  right: 0;
-  bottom: 52px;
-  left: 0;
-  padding: 12px;
-  background: #17252b;
-  border: 1px solid #577163;
-  font-size: 12px;
+  align-items: center;
 }
-.settings button {
+.settings-content {
+  width: min(100%, 320px);
+  max-height: 100%;
+  min-height: 0;
+  overflow-y: auto;
+}
+.settings-content button {
   display: block;
   width: 100%;
-  margin-bottom: 7px;
+  margin: 6px 0;
 }
-.settings p {
-  margin: 4px 0;
-  font-size: 10px;
+.settings-content .audio-settings {
+  margin: 10px 0;
 }
 .audio-settings {
   display: grid;
@@ -419,9 +585,23 @@ kbd {
   justify-content: center;
   gap: 8px;
 }
-.audio-settings input[type='checkbox'] {
-  width: auto;
+.audio-settings .audio-mute-toggle {
+  width: 100%;
   margin: 0;
+  padding: 6px 3px;
+  border: 1px solid #a66059;
+  background: #84342f;
+  color: #fff7ee;
+  font: inherit;
+  font-weight: 700;
+  line-height: 1.15;
+}
+.audio-settings .audio-mute-toggle[aria-pressed='true'] {
+  border-color: #72c593;
+  background: #206b48;
+}
+.audio-settings .audio-mute-toggle:hover:not(:disabled) {
+  filter: brightness(1.18);
 }
 .audio-settings input[type='range'] {
   width: 110px;
@@ -429,15 +609,202 @@ kbd {
   accent-color: #f0d9a2;
 }
 
-@media (pointer: coarse) {
-  .surface {
-    --view-width: min(100vw, calc(100dvh * 9 / 16));
-    --view-height: calc(var(--view-width) * 16 / 9);
+@media (pointer: fine) {
+  .practice-game-panel .powerup-legend {
+    gap: 8px;
+    font-size: 12px;
+    line-height: 1.25;
   }
+  .practice-game-panel .battle-options {
+    gap: 10px;
+    font-size: 13px;
+  }
+  .practice-game-panel .battle-options-selects,
+  .practice-game-panel .battle-options-toggles {
+    gap: 8px;
+  }
+  .practice-game-panel .battle-options-toggles button {
+    min-height: 56px;
+    padding: 8px 5px;
+  }
+}
+
+/* The chosen aspect owns composition; pointer media rules only tune input-sized UI. */
+.surface[data-aspect='portrait'] .game-layout {
+  grid-template-columns: minmax(0, 1fr);
+  grid-template-rows:
+    minmax(
+      0,
+      min(
+        calc((100cqw - 2 * var(--layout-inset)) * var(--arena-rows) / var(--arena-columns)),
+        calc(100cqh - 2 * var(--layout-inset) - var(--layout-gap) - 282px)
+      )
+    )
+    minmax(0, 1fr);
+  --layout-gap: 6px;
+}
+.surface[data-aspect='portrait'] .arena-label-row:first-child {
+  top: 0;
+}
+.surface[data-aspect='portrait'] .arena-label-row:last-child {
+  bottom: 0;
+}
+.surface[data-aspect='portrait'] .arena-label-row {
+  justify-content: space-between;
+  gap: 6px;
+}
+.surface[data-aspect='portrait'] .game-panel {
+  padding: 8px 10px;
+  gap: 6px;
+}
+.surface[data-aspect='portrait'] .panel-header {
+  padding-bottom: 6px;
+  gap: 6px;
+}
+.surface[data-aspect='portrait'] .panel-footer {
+  padding-top: 5px;
+}
+.surface[data-aspect='portrait'] .panel-content {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
+  grid-template-rows: auto minmax(0, 1fr) auto;
+  gap: 5px 10px;
+}
+.surface[data-aspect='portrait'] .hud {
+  grid-column: 1 / -1;
+}
+.surface[data-aspect='portrait'] .legend-rail {
+  grid-column: 1;
+  grid-row: 2;
+  gap: 5px;
+}
+.surface[data-aspect='portrait'] .battle-status {
+  grid-column: 2;
+  grid-row: 2;
+}
+.surface[data-aspect='portrait'] .instructions {
+  grid-column: 1 / -1;
+  grid-row: 3;
+  margin: 0;
+}
+.surface[data-aspect='portrait'] .practice-game-panel .panel-content {
+  grid-template-rows: auto auto minmax(0, 1fr) auto;
+  gap: 5px 10px;
+}
+.surface[data-aspect='portrait'] .practice-game-panel .legend-rail {
+  display: contents;
+}
+.surface[data-aspect='portrait'] .practice-game-panel .battle-options {
+  grid-column: 1 / -1;
+  grid-row: 2;
+  margin-top: 0;
+}
+.surface[data-aspect='portrait'] .practice-game-panel .powerup-legend {
+  grid-column: 1;
+  grid-row: 3;
+  margin-top: 0;
+}
+.surface[data-aspect='portrait'] .practice-game-panel .instructions {
+  grid-row: 4;
+}
+
+.surface[data-aspect='landscape'] .game-layout {
+  grid-template-columns:
+    minmax(
+      0,
+      min(
+        calc((100cqh - 2 * var(--layout-inset)) * var(--arena-columns) / var(--arena-rows)),
+        calc(100cqw - 2 * var(--layout-inset) - var(--layout-gap) - min(250px, 45cqw))
+      )
+    )
+    minmax(0, 1fr);
+  grid-template-rows: minmax(0, 1fr);
+  --layout-gap: 12px;
+}
+@media (pointer: coarse) {
+  .surface[data-aspect='landscape'] .game-layout {
+    grid-template-columns:
+      minmax(
+        0,
+        min(
+          calc((100cqh - 2 * var(--layout-inset)) * var(--arena-columns) / var(--arena-rows)),
+          calc(100cqw - 2 * var(--layout-inset) - var(--layout-gap) - min(290px, 60cqw))
+        )
+      )
+      minmax(0, 1fr);
+  }
+  .surface[data-aspect='landscape'] .panel-content {
+    display: flex;
+    flex-direction: column;
+    gap: clamp(8px, 1.5vh, 16px);
+  }
+  .surface[data-aspect='landscape'] .legend-rail,
+  .surface[data-aspect='landscape'] .practice-game-panel .legend-rail {
+    display: grid;
+    grid-template-columns: minmax(0, 0.8fr) minmax(0, 1.2fr);
+    align-items: start;
+    gap: 4px;
+  }
+  .surface[data-aspect='landscape'] .practice-game-panel .powerup-legend {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 1px 2px;
+    font-size: 7px;
+    line-height: 1;
+  }
+  .surface[data-aspect='landscape'] .practice-game-panel .powerup-legend > div {
+    gap: 2px;
+    align-items: flex-start;
+  }
+  .surface[data-aspect='landscape'] .practice-game-panel .pickup-icon {
+    flex-basis: 12px;
+    width: 12px;
+    height: 12px;
+  }
+  .surface[data-aspect='landscape'] .practice-game-panel .pickup-meaning {
+    position: static;
+    width: auto;
+    height: auto;
+    overflow: visible;
+    clip-path: none;
+    white-space: normal;
+  }
+  .surface[data-aspect='landscape'] .practice-game-panel .battle-options,
+  .surface[data-aspect='landscape'] .practice-game-panel .powerup-legend {
+    margin-top: 0;
+  }
+  .surface[data-aspect='landscape'] .practice-game-panel .instructions {
+    margin-top: auto;
+  }
+  @container (max-width: 360px) {
+    .surface[data-aspect='landscape'] .practice-game-panel .legend-rail {
+      gap: 3px;
+    }
+    .surface[data-aspect='landscape'] .practice-game-panel .powerup-legend {
+      display: grid;
+      grid-template-columns: repeat(5, minmax(0, 1fr));
+      gap: 1px;
+      font-size: 7px;
+      line-height: 1;
+    }
+    .surface[data-aspect='landscape'] .practice-game-panel .powerup-legend > div {
+      flex-direction: column;
+      gap: 1px;
+      text-align: center;
+    }
+    .surface[data-aspect='landscape'] .practice-game-panel .pickup-meaning {
+      position: absolute;
+      width: 1px;
+      height: 1px;
+      overflow: hidden;
+      clip-path: inset(50%);
+      white-space: nowrap;
+    }
+  }
+}
+
+@media (pointer: coarse) {
   .game-layout {
-    grid-template-columns: minmax(0, 1fr);
-    grid-template-rows: minmax(0, 1fr) minmax(0, 1fr);
-    gap: 6px;
+    --layout-gap: 6px;
   }
   .game-panel {
     padding: 8px 10px;
@@ -465,6 +832,26 @@ kbd {
     grid-row: 2;
     gap: 5px;
   }
+  .practice-game-panel .panel-content {
+    grid-template-rows: auto auto minmax(0, 1fr) auto;
+  }
+  .practice-game-panel .legend-rail {
+    display: contents;
+  }
+  .practice-game-panel .battle-options {
+    grid-column: 1 / -1;
+    grid-row: 2;
+  }
+  .practice-game-panel .powerup-legend {
+    grid-column: 1;
+    grid-row: 3;
+  }
+  .practice-game-panel .battle-status {
+    grid-row: 3;
+  }
+  .practice-game-panel .instructions {
+    grid-row: 4;
+  }
   .battle-status {
     grid-column: 2;
     grid-row: 2;
@@ -486,19 +873,9 @@ kbd {
   .corner {
     font-size: 11px;
   }
-  .corner_top_right {
-    gap: 6px;
-  }
-  .corner_top_right button {
-    padding: 5px 7px;
-    font-size: 10px;
-  }
   .eyebrow {
     font-size: 8px;
     letter-spacing: 1px;
-  }
-  h1 {
-    font-size: clamp(17px, 4vw, 24px);
   }
   h2 {
     margin: 4px 0;
@@ -507,6 +884,14 @@ kbd {
   .battle-options {
     gap: 3px;
     font-size: 10px;
+  }
+  .battle-options-selects,
+  .battle-options-toggles {
+    gap: 3px;
+  }
+  .battle-options-toggles button,
+  .overlay .battle-options-toggles button {
+    padding: 4px 2px;
   }
   .battle-options select {
     max-width: 92px;
@@ -543,21 +928,9 @@ kbd {
   .corner_bottom_right span {
     font-size: 7px;
   }
-  .settings {
-    bottom: 42px;
-    padding: 8px;
-    font-size: 10px;
-  }
 }
 
 @media (pointer: coarse) and (orientation: landscape) {
-  .surface {
-    --view-width: min(100vw, calc(100dvh * 9 / 16));
-    --view-height: calc(var(--view-width) * 16 / 9);
-  }
-  .game-layout {
-    grid-template-rows: minmax(0, 0.36fr) minmax(0, 1fr);
-  }
   .game-panel {
     padding: 5px 12px;
     gap: 3px;
@@ -587,6 +960,13 @@ kbd {
   .battle-options {
     font-size: 8px;
   }
+  .practice-game-panel .legend-rail {
+    display: contents;
+  }
+  .practice-game-panel .powerup-legend {
+    grid-column: 1 / -1;
+    grid-row: 3;
+  }
   .powerup-legend {
     grid-column: 2;
     grid-row: 1;
@@ -608,18 +988,8 @@ kbd {
     grid-column: 1 / -1;
     grid-row: 3;
   }
-  .corner_top_right a {
-    display: none;
-  }
-  .corner_top_right button {
-    padding: 3px 6px;
-    font-size: 9px;
-  }
   .eyebrow {
     font-size: 7px;
-  }
-  h1 {
-    font-size: 16px;
   }
   .corner_bottom_right {
     font-size: 8px;
@@ -631,8 +1001,8 @@ kbd {
 
 @container (max-width: 620px) {
   .game-layout {
-    inset: 7px;
-    gap: 5px;
+    --layout-inset: 7px;
+    --layout-gap: 5px;
   }
   .game-panel {
     padding: 7px;
@@ -655,12 +1025,15 @@ kbd {
   .battle-status {
     font-size: 8px;
   }
-  .corner_top_right {
-    gap: 4px;
+}
+
+@container (max-height: 240px) {
+  .surface[data-aspect='landscape'] .game-panel {
+    padding: 5px;
+    gap: 3px;
   }
-  .corner_top_right button {
-    padding: 4px 5px;
-    font-size: 9px;
+  .surface[data-aspect='landscape'] .panel-content {
+    gap: 3px;
   }
 }
 
@@ -683,6 +1056,9 @@ kbd {
   .battle-options {
     gap: 2px;
     font-size: 8px;
+  }
+  .practice-game-panel .panel-content {
+    grid-template-rows: auto auto minmax(0, 1fr) auto;
   }
   .battle-options select {
     max-width: 76px;
@@ -717,5 +1093,140 @@ kbd {
   .panel-footer button {
     padding: 5px 7px;
     font-size: 9px;
+  }
+}
+
+@media (pointer: coarse) and (orientation: landscape) {
+  .practice-game-panel .panel-content {
+    grid-template-rows: auto auto auto auto auto;
+  }
+  .practice-game-panel .powerup-legend {
+    grid-column: 1 / -1;
+    grid-row: 3;
+    grid-template-columns: repeat(5, minmax(0, 1fr));
+  }
+  .practice-game-panel .powerup-legend > div {
+    flex-direction: column;
+    gap: 1px;
+    text-align: center;
+  }
+  .practice-game-panel .pickup-meaning {
+    position: absolute;
+    width: 1px;
+    height: 1px;
+    overflow: hidden;
+    clip-path: inset(50%);
+    white-space: nowrap;
+  }
+  .practice-game-panel .battle-status {
+    grid-column: 1 / -1;
+    grid-row: 4;
+  }
+  .practice-game-panel .instructions {
+    grid-row: 5;
+  }
+}
+
+@media (pointer: fine) {
+  .practice-game-panel .panel-content {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr);
+    grid-template-rows: auto auto auto minmax(0, 1fr) auto;
+    gap: 0;
+  }
+  .practice-game-panel .hud {
+    grid-column: 1;
+    grid-row: 1;
+    align-items: center;
+    flex-wrap: nowrap;
+    gap: 4px;
+    font-size: clamp(8px, 2.2cqw, 11px);
+    letter-spacing: clamp(0px, 0.1cqw, 0.6px);
+    white-space: nowrap;
+  }
+  .practice-game-panel .legend-rail {
+    display: contents;
+  }
+  .practice-game-panel .battle-options {
+    grid-column: 1;
+    grid-row: 2;
+    margin-top: 30px;
+  }
+  .practice-game-panel .powerup-legend {
+    grid-column: 1;
+    grid-row: 3;
+    align-content: start;
+    margin-top: 30px;
+  }
+  .practice-game-panel .instructions {
+    grid-column: 1;
+    grid-row: 5;
+    margin-top: 0;
+  }
+
+  .surface[data-aspect='portrait'] .practice-game-panel .battle-options {
+    margin-top: 8px;
+  }
+  .surface[data-aspect='portrait'] .practice-game-panel .battle-options-toggles button {
+    min-height: 0;
+    height: 36px;
+    padding: 3px 4px;
+    white-space: nowrap;
+  }
+  .surface[data-aspect='portrait'] .practice-game-panel .powerup-legend {
+    margin-top: 8px;
+    gap: 2px;
+  }
+  .surface[data-aspect='portrait'] .practice-game-panel .powerup-legend > div {
+    white-space: nowrap;
+  }
+  .surface[data-aspect='portrait'] .practice-game-panel .powerup-legend > div > span:last-child {
+    min-width: 0;
+    overflow: hidden;
+    text-overflow: ellipsis;
+  }
+
+  @container (max-width: 360px) {
+    .practice-game-panel .battle-options {
+      gap: 3px;
+      font-size: 9px;
+    }
+    .practice-game-panel .battle-options-selects,
+    .practice-game-panel .battle-options-toggles {
+      gap: 3px;
+    }
+    .practice-game-panel .battle-options-toggles button {
+      min-height: 0;
+      padding: 4px 2px;
+    }
+    .practice-game-panel .powerup-legend {
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+      gap: 2px 4px;
+      font-size: 9px;
+      line-height: 1.15;
+    }
+  }
+
+  @container (min-width: 400px) and (min-height: 650px) {
+    .practice-game-panel .battle-options {
+      grid-template-rows: 24px 36px;
+      gap: 5px;
+      font-size: 12px;
+    }
+    .practice-game-panel .battle-options-selects label {
+      justify-content: flex-start;
+      gap: 8px;
+    }
+    .practice-game-panel .battle-options-selects select {
+      flex: 1;
+      width: 100%;
+      height: 24px;
+      padding: 2px 6px;
+    }
+    .practice-game-panel .battle-options-toggles button {
+      min-height: 0;
+      height: 36px;
+      padding: 3px 4px;
+    }
   }
 }

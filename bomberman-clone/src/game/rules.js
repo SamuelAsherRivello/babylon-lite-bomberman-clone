@@ -43,7 +43,13 @@ export function suddenDeathWaves(board, width = WIDTH, height = HEIGHT) {
   }));
 }
 
-export function createGame(ids = ['practice'], seed = 1, mapSize = 'LOW', plant = false) {
+export function createGame(
+  ids = ['practice'],
+  seed = 1,
+  mapSize = 'LOW',
+  plant = false,
+  chainReaction = false,
+) {
   const [WIDTH, HEIGHT] = MAP_SIZES[mapSize] || MAP_SIZES.LOW,
     index = (x, y) => y * WIDTH + x;
   const corners = [
@@ -132,6 +138,7 @@ export function createGame(ids = ['practice'], seed = 1, mapSize = 'LOW', plant 
     height: HEIGHT,
     mapSize,
     plantEnabled: plant,
+    ...(chainReaction ? { chainReaction: true } : {}),
     plants,
     nextPlantTick: 300,
     time: 0,
@@ -179,7 +186,14 @@ function blocked(g, p, x, y) {
         [-0.28, 0.28].some((dx) =>
           [-0.28, 0.28].some((dy) => index(Math.floor(p.x + dx), Math.floor(p.y + dy)) === cell),
         );
-      if (tx < 0 || ty < 0 || tx >= WIDTH || ty >= HEIGHT || (g.board[cell] && !leavingClosed))
+      if (
+        tx < 0 ||
+        ty < 0 ||
+        tx >= WIDTH ||
+        ty >= HEIGHT ||
+        (g.board[cell] && !leavingClosed) ||
+        g.plants.includes(cell)
+      )
         return true;
       if (g.bombs.some((b) => b.x === tx && b.y === ty && !b.pass.includes(p.id))) return true;
     }
@@ -189,7 +203,11 @@ function blocked(g, p, x, y) {
 export function placeBomb(g, p) {
   if (!p?.alive || g.bombs.filter((b) => b.owner === p.id).length >= p.capacity) return false;
   const [x, y] = tile(p);
-  if (g.board[index(x, y, g.width || 15)] || g.bombs.some((b) => b.x === x && b.y === y))
+  if (
+    g.board[index(x, y, g.width || 15)] ||
+    g.plants?.includes(index(x, y, g.width || 15)) ||
+    g.bombs.some((b) => b.x === x && b.y === y)
+  )
     return false;
   g.bombs.push({
     id: g.nextBomb++,
@@ -199,7 +217,9 @@ export function placeBomb(g, p) {
     range: p.range,
     deadline: g.tick + 150,
     pass: g.players
-      .filter((q) => Math.abs(q.x - x - 0.5) < 0.78 && Math.abs(q.y - y - 0.5) < 0.78)
+      .filter(
+        (q) => q.id === p.id || (Math.abs(q.x - x - 0.5) < 0.78 && Math.abs(q.y - y - 0.5) < 0.78),
+      )
       .map((q) => q.id),
   });
   return true;
@@ -233,6 +253,7 @@ export function stepGame(g, inputs = {}) {
       ty = Math.floor(p.y),
       solid = (x, y) =>
         Boolean(g.board[index(x, y)]) ||
+        g.plants.includes(index(x, y)) ||
         (!p.glove && g.bombs.some((b) => b.x === x && b.y === y && !b.pass.includes(p.id)));
     // Keep the small collider for forgiving turns, but don't let it create
     // sideways wiggle inside a corridor bounded on both sides.
@@ -327,6 +348,15 @@ export function stepGame(g, inputs = {}) {
           y + dy < HEIGHT - 1 &&
           !g.board[next] &&
           !g.bombs.some((b) => b.x === x + dx && b.y === y + dy) &&
+          !g.players.some(
+            (p) =>
+              p.alive &&
+              [-0.28, 0.28].some((ox) =>
+                [-0.28, 0.28].some(
+                  (oy) => index(Math.floor(p.x + ox), Math.floor(p.y + oy)) === next,
+                ),
+              ),
+          ) &&
           !dangerous(next)
         )
           grown.add(next);
@@ -366,24 +396,24 @@ export function stepGame(g, inputs = {}) {
       }
   }
   const queue = g.bombs.filter((b) => !b.sliding && b.deadline <= g.tick),
-    detonated = new Set(),
+    detonated = new Map(),
     geometry = [...g.board],
     destroyed = new Set(),
     plantGeometry = new Set(g.plants),
     cutPlants = new Set();
-  while (queue.length) {
-    const bomb = queue.shift();
-    if (detonated.has(bomb.id)) continue;
-    detonated.add(bomb.id);
-    const cells = [index(bomb.x, bomb.y)];
-    if (plantGeometry.has(cells[0])) cutPlants.add(cells[0]);
+  const trace = (bomb, fullRange) => {
+    const cells = [index(bomb.x, bomb.y)],
+      triggered = [],
+      blocks = new Set(),
+      plants = new Set();
+    if (plantGeometry.has(cells[0])) plants.add(cells[0]);
     for (const [dx, dy] of [
       [1, 0],
       [-1, 0],
       [0, 1],
       [0, -1],
     ])
-      for (let n = 1; n <= bomb.range; n++) {
+      for (let n = 1; n <= (fullRange ? Math.max(WIDTH, HEIGHT) : bomb.range); n++) {
         const x = bomb.x + dx * n,
           y = bomb.y + dy * n;
         if (x < 0 || y < 0 || x >= WIDTH || y >= HEIGHT) break;
@@ -391,16 +421,43 @@ export function stepGame(g, inputs = {}) {
         if (geometry[i] === 1) break;
         cells.push(i);
         const other = g.bombs.find((b) => b.x === x && b.y === y);
-        if (other) queue.push(other);
+        if (other) triggered.push(other);
         if (plantGeometry.has(i)) {
-          cutPlants.add(i);
+          plants.add(i);
           break;
         }
         if (geometry[i] === 2) {
-          destroyed.add(i);
+          blocks.add(i);
           break;
         }
       }
+    return { cells, triggered, blocks, plants };
+  };
+  while (queue.length) {
+    const bomb = queue.shift();
+    if (detonated.has(bomb.id)) continue;
+    detonated.set(bomb.id, bomb);
+    queue.push(...trace(bomb, false).triggered);
+  }
+  if (g.chainReaction && detonated.size >= 2) {
+    // An extended ray can reach another bomb, so expand until no new bombs join this tick.
+    const expanded = new Set();
+    const pending = [...detonated.values()];
+    while (pending.length) {
+      const bomb = pending.shift();
+      if (expanded.has(bomb.id)) continue;
+      expanded.add(bomb.id);
+      for (const other of trace(bomb, true).triggered)
+        if (!detonated.has(other.id)) {
+          detonated.set(other.id, other);
+          pending.push(other);
+        }
+    }
+  }
+  for (const bomb of detonated.values()) {
+    const { cells, blocks, plants } = trace(bomb, g.chainReaction && detonated.size >= 2);
+    for (const cell of blocks) destroyed.add(cell);
+    for (const cell of plants) cutPlants.add(cell);
     g.blasts.push({ id: bomb.id, cells, until: g.tick + 30 });
     g.events.push({ type: 'explosion', bomb: bomb.id, cells });
   }
@@ -418,11 +475,7 @@ export function stepGame(g, inputs = {}) {
       const touched = [-0.28, 0.28].some((dx) =>
         [-0.28, 0.28].some((dy) => {
           const cell = index(Math.floor(p.x + dx), Math.floor(p.y + dy));
-          return (
-            g.blasts.some((b) => b.cells.includes(cell)) ||
-            g.plants.includes(cell) ||
-            g.closed.includes(cell)
-          );
+          return g.blasts.some((b) => b.cells.includes(cell)) || g.closed.includes(cell);
         }),
       );
       if (touched && g.tick >= (p.shieldUntil || 0)) {

@@ -5,9 +5,11 @@ import { MultiplayerClient } from '@rmc/multiplayer-client';
 import { decode } from '@colyseus/schema';
 import { unpack } from '@colyseus/msgpackr';
 import { Protocol } from '@colyseus/shared-types';
+import { requireBrowserBackend } from './browser-backend.mjs';
 
 // A separate integration command: requires the running application and public backend.
 const url = process.env.GAME_URL || 'http://127.0.0.1:5173/babylon-lite-bomberman-clone/';
+const backend = requireBrowserBackend();
 const browser = await chromium.launch({
   channel: 'chrome',
   headless: true,
@@ -66,13 +68,13 @@ async function page(options = {}, destination = url) {
   p.on('pageerror', (e) => errors.push(e.message));
   const target = new URL(destination);
   target.searchParams.set('mute', '1');
+  target.searchParams.set('server', backend);
+  target.searchParams.set('mode', 'online');
   await p.goto(target.href);
   if (target.searchParams.has('room'))
     await p
       .getByRole('heading', { name: `Room ${target.searchParams.get('room')}` })
       .waitFor({ timeout: 30000 });
-  else if (target.searchParams.get('mode') !== 'online')
-    await p.getByRole('button', { name: 'Play online', exact: true }).click();
   else await p.getByRole('heading', { name: 'Battle with friends' }).waitFor();
   await p.waitForFunction(
     () => document.querySelector('canvas')?.getBoundingClientRect().height > 0,
@@ -118,6 +120,11 @@ async function checkLayout(p) {
       rows: grid.gridTemplateRows.split(' ').length,
       columns: grid.gridTemplateColumns.split(' ').length,
       square: Math.abs(arena.width - arena.height) < 1,
+      arenaLeftOfPanel: arena.right <= panelBox.left + 1,
+      arenaAbovePanel: arena.bottom <= panelBox.top + 1,
+      rotateNoticeVisible: [...document.querySelectorAll('.orientation-notice')].some(
+        (notice) => getComputedStyle(notice).display !== 'none',
+      ),
       panelFits:
         panel.scrollHeight <= panel.clientHeight + 1 &&
         panel.querySelector('.panel-content').scrollHeight <=
@@ -127,10 +134,13 @@ async function checkLayout(p) {
   if (fit.coarse) {
     assert.ok(Math.abs(fit.ratio - 9 / 16) < 0.001);
     assert.equal(fit.rows, 2, 'mobile stays stacked');
+    assert.ok(fit.arenaAbovePanel, 'mobile arena is above the panel');
   } else {
     assert.ok(Math.abs(fit.ratio - 16 / 9) < 0.001);
     assert.equal(fit.columns, 2, 'PC stays side by side');
+    assert.ok(fit.arenaLeftOfPanel, 'PC arena is left of the panel');
   }
+  assert.equal(fit.rotateNoticeVisible, false, 'both layouts remain playable');
   assert.equal(fit.gutters, 4);
   assert.ok(
     fit.square && fit.panelFits && fit.canvasFits && fit.cornersFit,
@@ -198,16 +208,8 @@ try {
     true,
     'occupied colors cannot be selected',
   );
-  observer = new MultiplayerClient(
-    process.env.BACKEND_URL || 'https://rmc-colyseus-multiplayer-server.vercel.app',
-    'bomberman',
-    { code },
-  );
-  fourth = new MultiplayerClient(
-    process.env.BACKEND_URL || 'https://rmc-colyseus-multiplayer-server.vercel.app',
-    'bomberman',
-    { code },
-  );
+  observer = new MultiplayerClient(backend, 'bomberman', { code });
+  fourth = new MultiplayerClient(backend, 'bomberman', { code });
   void observer.connect();
   await until(() => observer.state.status === 'connected', 'third human admission');
   void fourth.connect();
@@ -543,8 +545,8 @@ try {
   await isolated.waitFor({ timeout: 20000 });
   assert.notEqual(await isolated.innerText(), `Room ${code}`, 'new room is isolated');
   const touchCode = (await isolated.innerText()).split(' ')[1];
-  await mobile.getByRole('button', { name: 'Local practice', exact: true }).click();
-  await mobile.getByRole('button', { name: 'Play online', exact: true }).click();
+  await mobile.getByRole('button', { name: 'Mode: Online', exact: true }).click();
+  await mobile.getByRole('button', { name: 'Mode: Offline', exact: true }).click();
   await mobile.getByLabel('Room code').fill(touchCode);
   await mobile.getByRole('button', { name: 'Join room', exact: true }).click();
   await mobile.getByRole('heading', { name: `Room ${touchCode}` }).waitFor();
@@ -552,13 +554,18 @@ try {
   await mobile.getByRole('button', { name: 'Ready up', exact: true }).click();
   await mobile.getByText(/s · ALIVE/).waitFor({ timeout: 10000 });
   await checkLayout(mobile);
-  touchObserver = new MultiplayerClient(
-    process.env.BACKEND_URL || 'https://rmc-colyseus-multiplayer-server.vercel.app',
-    'bomberman',
-    { code: touchCode },
-  );
+  touchObserver = new MultiplayerClient(backend, 'bomberman', { code: touchCode });
   void touchObserver.connect();
-  await until(() => touchObserver.state.status === 'connected', 'touch verification observer');
+  await until(
+    () => ['connected', 'error', 'full'].includes(touchObserver.state.status),
+    'touch verification observer',
+    30000,
+  );
+  assert.equal(
+    touchObserver.state.status,
+    'connected',
+    `touch verification observer admission: ${touchObserver.state.error}`,
+  );
   const mobileId = touchObserver.state.gameState.people.find((p) => p.number === 1).id;
   const panelBox = await mobile.locator('.game-panel').boundingBox(),
     arenaBox = await mobile.locator('.arena-square').boundingBox();
@@ -599,18 +606,14 @@ try {
     'touch cancellation clears held movement',
   );
   await mobile.screenshot({ path: 'bomberman-clone/documentation/multiplayer-mobile.png' });
-  expiryProbe = new MultiplayerClient(
-    process.env.BACKEND_URL || 'https://rmc-colyseus-multiplayer-server.vercel.app',
-    'bomberman',
-    { create: true },
-  );
+  expiryProbe = new MultiplayerClient(backend, 'bomberman', { create: true });
   void expiryProbe.connect();
   await until(() => expiryProbe.state.status === 'connected', 'create expiry probe');
   const expiredCode = expiryProbe.state.code;
   expiryProbe.disconnect();
   await extra.waitForTimeout(16500);
-  await extra.getByRole('button', { name: 'Local practice', exact: true }).click();
-  await extra.getByRole('button', { name: 'Play online', exact: true }).click();
+  await extra.getByRole('button', { name: 'Mode: Online', exact: true }).click();
+  await extra.getByRole('button', { name: 'Mode: Offline', exact: true }).click();
   await extra.getByLabel('Room code').fill(expiredCode);
   await extra.getByRole('button', { name: 'Join room', exact: true }).click();
   await extra

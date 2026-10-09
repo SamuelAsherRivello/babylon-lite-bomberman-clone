@@ -1,6 +1,6 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import { createGame, stepGame, index, MAP_SIZES } from '../src/game/rules.js';
+import { createGame, stepGame, placeBomb, index, MAP_SIZES } from '../src/game/rules.js';
 import { cpuInput, CPU_LEVELS, cpuHazards } from '../src/game/cpu.js';
 const advance = (g, n, inputs = {}) => {
   for (let i = 0; i < n; i++) stepGame(g, inputs);
@@ -86,7 +86,7 @@ test('glove pushes a bomb until impact, suspends its old fuse and clears on deat
   assert.equal(p.alive, false);
   assert.equal(p.glove, false);
 });
-test('lightning shields blasts, plants and closing walls for exactly ten seconds', () => {
+test('lightning shields blasts and closing walls for exactly ten seconds', () => {
   const g = createGame();
   const p = g.players[0],
     cell = index(1, 1);
@@ -94,13 +94,29 @@ test('lightning shields blasts, plants and closing walls for exactly ten seconds
   stepGame(g);
   assert.equal(p.shieldUntil, 601);
   g.blasts = [{ id: 1, cells: [cell], until: 900 }];
-  g.plants = [cell];
   g.waves = [{ cells: [cell], warnTick: 0, closeTick: 2 }];
   advance(g, 599);
   assert.equal(g.tick, 600);
   assert.equal(p.alive, true);
   stepGame(g);
   assert.equal(p.alive, false);
+});
+test('plant blocks movement like a wall without eliminating the player', () => {
+  const g = createGame();
+  g.board = g.board.map((value) => (value === 2 ? 0 : value));
+  const p = g.players[0];
+  g.plants = [index(2, 1)];
+  advance(g, 30, { practice: { x: 1, y: 0 } });
+  assert.ok(p.x <= 1.72, 'the player collider stops at the plant');
+  assert.equal(p.alive, true);
+  advance(g, 30, { practice: { x: 0, y: 1 } });
+  assert.ok(p.y > 1.5, 'the player can move along the plant');
+  assert.equal(p.alive, true);
+  p.x = 2.5;
+  p.y = 1.5;
+  assert.equal(placeBomb(g, p), false, 'a plant tile cannot hold a new bomb');
+  stepGame(g);
+  assert.equal(p.alive, true, 'contact alone does not eliminate the player');
 });
 test('plant starts away from corners, grows every five seconds and blasts cut individual segments', () => {
   const g = createGame(['a', 'b', 'c', 'd'], 2, 'MED', true),

@@ -6,7 +6,7 @@ context: |
   Verified baseline: React/Vite ESM, npm root, application under bomberman-clone/;
   Babylon Lite 1.32.0/WebGPU renderer and released Colyseus shared client
   v0.9.7 are installed for released game v0.0.5. Preserve template corner UI roles and application root.
-  Landscape-only viewport, four gutters, nearest-sampled 16px original tiles,
+  PC landscape and mobile portrait viewport compositions, four gutters, nearest-sampled 16px original tiles,
   precise simulation/prediction coordinates and CSS-resolution React UI.
   Runtime targets: desktop and mobile WebGPU browsers with keyboard and touch.
   Deployment: existing GitHub Pages workflow for the client; shared server at

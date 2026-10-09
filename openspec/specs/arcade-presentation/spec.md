@@ -29,13 +29,16 @@ Documentation SHALL state actual setup and release commands, controls, rendering
 - **THEN** public gameplay, release version, README links and local/remote revisions match the recorded verification evidence
 
 ### Requirement: Death cause visibility
-The game SHALL hold the visible lethal scene for three seconds before presenting a death, retry or round/match-result prompt. A local online death view SHALL not pause other players or authoritative simulation.
-#### Scenario: Local online elimination
+Local practice SHALL hold the visible lethal scene for three seconds before presenting a death or retry prompt. Online play SHALL display each current authoritative state without a local death or result hold.
+#### Scenario: Online elimination
 - **WHEN** the local player dies while other combatants remain alive
-- **THEN** that browser holds the cause-of-death scene for three seconds before spectating while other browsers continue play
+- **THEN** that browser immediately spectates the continuing room without holding the cause-of-death scene
+#### Scenario: Practice elimination
+- **WHEN** the local practice player dies
+- **THEN** that browser holds the visible lethal scene for three seconds before presenting the retry prompt
 #### Scenario: Final elimination
 - **WHEN** a round ends through elimination
-- **THEN** the final scene remains visible for three seconds before the result prompt and a subsequent round cannot skip that view
+- **THEN** online browsers show the result prompt when the authoritative room enters results, while local practice retains its three-second death view
 
 ### Requirement: Optional bomb warning flash
 Bombs SHALL flash twice during the final 0.5 seconds before timed explosion when the player's Bomb Flash checkbox is ON. OFF SHALL suppress that warning flash without changing gameplay timing or other players' preferences.

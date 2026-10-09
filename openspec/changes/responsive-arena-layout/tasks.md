@@ -17,4 +17,4 @@
 
 ## 4. Cross-mode verification
 
-- [ ] 4.1 Verify practice and online modes retain readable HUD, the four corner roles, fullscreen resizing, no-scroll panel fit, and correct PC/mobile composition; run `npm test`, `npm run build`, and `npm run test:browser` where the required backend and Chrome WebGPU environment are available.
+- [x] 4.1 Verify practice and online modes retain readable HUD, the four corner roles, fullscreen resizing, no-scroll panel fit, and correct PC/mobile composition; run `npm test`, `npm run build`, and `npm run test:browser` where the required backend and Chrome WebGPU environment are available.

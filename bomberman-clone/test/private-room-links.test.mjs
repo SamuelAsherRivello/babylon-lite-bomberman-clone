@@ -8,7 +8,7 @@ test('Bomberman accepts six-character room codes and auto-joins invite links', a
     readFile(new URL('../src/App.jsx', import.meta.url), 'utf8'),
     readFile(new URL('../src/Online.jsx', import.meta.url), 'utf8'),
   ]);
-  assert.match(app, /params\.get\('mode'\)\s*===\s*'online'\s*\|\|\s*params\.has\('room'\)/);
+  assert.match(app, /params\.has\('room'\)\s*\|\|\s*params\.get\('mode'\)\s*!==\s*'offline'/);
   assert.match(online, /slice\(0,\s*6\)/);
   assert.match(online, /maxLength=\{6\}/);
   assert.match(online, /code\.length\s*!==\s*6/);
@@ -32,5 +32,21 @@ test('room invite uses the current host and the app base in Vite and on Pages', 
   assert.equal(
     createRoomInvite('https://example.github.io/babylon-lite-bomberman-clone/', base, 'ABC123'),
     'https://example.github.io/babylon-lite-bomberman-clone/?mode=online&room=ABC123',
+  );
+  assert.equal(
+    createRoomInvite(
+      'https://example.github.io/babylon-lite-bomberman-clone/?server=https%3A%2F%2Ftest.example',
+      base,
+      'ABC123',
+    ),
+    'https://example.github.io/babylon-lite-bomberman-clone/?mode=online&room=ABC123&server=https%3A%2F%2Ftest.example',
+  );
+  assert.equal(
+    createRoomInvite(
+      'http://127.0.0.1:5173/babylon-lite-bomberman-clone/?server=VITE_LOCAL&serverTest=true',
+      base,
+      'ABC123',
+    ),
+    'http://127.0.0.1:5173/babylon-lite-bomberman-clone/?mode=online&room=ABC123&server=VITE_LOCAL&serverTest=true',
   );
 });

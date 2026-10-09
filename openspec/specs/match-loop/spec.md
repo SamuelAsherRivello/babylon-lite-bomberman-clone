@@ -4,7 +4,7 @@ Let friends complete and replay first-to-three multiplayer matches with clear sc
 ## Requirements
 
 ### Requirement: Complete match progression
-The last survivor SHALL gain one round win; simultaneous final eliminations or timeout without one survivor SHALL award none. A short score break and countdown SHALL lead automatically to the next round while at least one human remains connected. The first player with three wins SHALL win the match. The HUD SHALL show player status, scores, remaining time and round number; eliminated players SHALL spectate after their three-second death view; late human joins SHALL take available CPU seats without reviving eliminated actors.
+The last survivor SHALL gain one round win; simultaneous final eliminations or timeout without one survivor SHALL award none. A short score break and countdown SHALL lead automatically to the next round while at least one human remains connected. The first player with three wins SHALL win the match. The HUD SHALL show player status, scores, remaining time and round number; eliminated players SHALL spectate live room state as soon as their elimination is received; late human joins SHALL take available CPU seats without reviving eliminated actors.
 
 #### Scenario: Three wins
 - **WHEN** a player wins their third round

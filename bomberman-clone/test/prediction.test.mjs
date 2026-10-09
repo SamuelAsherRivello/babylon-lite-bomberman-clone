@@ -1,6 +1,6 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import { createGame } from '@rmc/multiplayer-client/bomberman';
+import { createGame, index } from '../src/game/rules.js';
 import { predictMovement, ReconciledView } from '../src/game/prediction.js';
 test('prediction responds immediately and does not mutate authoritative outcomes', () => {
   const state = { ...createGame(['a', 'b']), phase: 'playing', round: 1 };
@@ -8,6 +8,21 @@ test('prediction responds immediately and does not mutate authoritative outcomes
   const player = predictMovement(state, 'a', { x: 1, y: 0 });
   assert.ok(player.x > state.players[0].x);
   assert.deepEqual(state, original);
+});
+
+test('prediction treats plants as solid and does not show a bomb on a plant', () => {
+  const state = { ...createGame(['a', 'b']), phase: 'playing', round: 1 };
+  state.board = state.board.map((value) => (value === 2 ? 0 : value));
+  state.plants = [index(2, 1)];
+  state.players[0].x = 1.7;
+  const predicted = predictMovement(state, 'a', { x: 1, y: 0 });
+  assert.equal(predicted.x, 1.7);
+  assert.equal(predicted.alive, true);
+  state.players[0].x = 2.5;
+  const view = new ReconciledView(() => 0);
+  view.accept(state, 'a');
+  view.advance('a', { x: 0, y: 0, bomb: true }, 1);
+  assert.deepEqual(view.ghosts, []);
 });
 
 test('authoritative speed upgrades predict immediately while closed walls and pickup authority stay intact', () => {

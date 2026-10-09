@@ -37,6 +37,33 @@ test('bomb capacity, fuse, owner damage and blast duration', () => {
   advance(g, 30);
   assert.equal(g.blasts.length, 0);
 });
+test('placing a bomb cannot eliminate its owner before the blast, even beside a plant', () => {
+  const g = createGame(['owner', 'opponent']);
+  g.board.fill(0);
+  const [owner, opponent] = g.players;
+  owner.x = 3.75;
+  owner.y = 3.5;
+  opponent.x = 3.5;
+  opponent.y = 2.5;
+  const plant = index(4, 3);
+  const block = index(3, 4);
+  g.plants = [plant];
+  g.board[block] = 2;
+  assert.equal(placeBomb(g, owner), true);
+  assert.ok(g.bombs[0].pass.includes(owner.id));
+  advance(g, 149);
+  assert.equal(owner.alive, true);
+  assert.equal(opponent.alive, true);
+  assert.equal(
+    g.events.some((event) => event.type === 'elimination'),
+    false,
+  );
+  advance(g, 1);
+  assert.equal(owner.alive, false);
+  assert.equal(opponent.alive, false);
+  assert.equal(g.plants.includes(plant), false);
+  assert.equal(g.board[block], 0);
+});
 test('owner leaves bomb but cannot reenter', () => {
   const g = createGame(),
     p = g.players[0];
@@ -65,6 +92,58 @@ test('chain detonates once and destruction blocks that tick rays', () => {
   assert.equal(g.blasts.length, 2);
   assert.equal(g.board[index(6, 3)], 0);
   assert.ok(!g.blasts.some((b) => b.cells.includes(index(7, 3))));
+});
+test('Chain Reaction is off by default and extends every bomb in a multi-bomb explosion', () => {
+  const setup = (enabled) => {
+    const g = createGame(['practice'], 1, 'LOW', false, enabled);
+    g.board.fill(0);
+    g.bombs = [
+      { id: 1, owner: 'practice', x: 3, y: 3, range: 2, deadline: 1, pass: [] },
+      { id: 2, owner: 'practice', x: 5, y: 3, range: 2, deadline: 150, pass: [] },
+      { id: 3, owner: 'practice', x: 11, y: 3, range: 2, deadline: 150, pass: [] },
+    ];
+    g.players[0].x = 13.5;
+    g.players[0].y = 11.5;
+    return g;
+  };
+  const ordinary = setup(false);
+  assert.equal(Boolean(ordinary.chainReaction), false);
+  stepGame(ordinary);
+  assert.deepEqual(
+    ordinary.events.filter((e) => e.type === 'explosion').map((e) => e.bomb),
+    [1, 2],
+  );
+  assert.ok(!ordinary.blasts.some((b) => b.cells.includes(index(10, 3))));
+  const chained = setup(true);
+  stepGame(chained);
+  assert.deepEqual(
+    chained.events.filter((e) => e.type === 'explosion').map((e) => e.bomb),
+    [1, 2, 3],
+  );
+  for (const blast of chained.blasts) {
+    const x = { 1: 3, 2: 5, 3: 11 }[blast.id];
+    assert.ok(blast.cells.includes(index(1, 3)), 'each blast reaches the far end of its row');
+    assert.ok(blast.cells.includes(index(x, 11)), 'each blast reaches the far end of its column');
+  }
+});
+test('Chain Reaction leaves a lone bomb at normal range and respects obstacles', () => {
+  const g = createGame(['practice'], 1, 'LOW', false, true);
+  g.board.fill(0);
+  g.bombs = [{ id: 1, owner: 'practice', x: 3, y: 3, range: 2, deadline: 1, pass: [] }];
+  g.players[0].x = 13.5;
+  g.players[0].y = 11.5;
+  stepGame(g);
+  assert.ok(!g.blasts[0].cells.includes(index(3, 10)));
+  g.bombs = [
+    { id: 2, owner: 'practice', x: 3, y: 5, range: 2, deadline: 2, pass: [] },
+    { id: 3, owner: 'practice', x: 5, y: 5, range: 2, deadline: 2, pass: [] },
+  ];
+  g.board[index(3, 7)] = 2;
+  g.board[index(7, 5)] = 1;
+  stepGame(g);
+  assert.ok(g.blasts.some((b) => b.id === 2 && b.cells.includes(index(3, 7))));
+  assert.ok(!g.blasts.some((b) => b.id === 2 && b.cells.includes(index(3, 8))));
+  assert.ok(!g.blasts.some((b) => b.id === 3 && b.cells.includes(index(8, 5))));
 });
 test('pause and restart have no stale clock or bomb state', () => {
   const g = createGame();

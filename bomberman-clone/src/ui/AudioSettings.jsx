@@ -24,15 +24,16 @@ export function AudioSettings({ sound }) {
   const forced = new URLSearchParams(location.search).get('mute') === '1';
   return (
     <div className="audio-settings">
-      <label>
-        <input
-          type="checkbox"
-          checked={sound.muted}
-          disabled={forced}
-          onChange={(e) => sound.setMuted(e.target.checked)}
-        />{' '}
-        Mute all audio
-      </label>
+      <button
+        type="button"
+        className="audio-mute-toggle"
+        aria-pressed={sound.muted}
+        disabled={forced}
+        title="Mutes or enables all arcade audio."
+        onClick={() => sound.setMuted(!sound.muted)}
+      >
+        Mute All Audio: {sound.muted ? 'On' : 'Off'}
+      </button>
       <label>
         Volume{' '}
         <input

@@ -5,47 +5,81 @@ import { createControls, createGestureHandlers } from './input/controls.js';
 import versionText from '../../version.txt?raw';
 import { Online } from './Online.jsx';
 import { Viewport } from './ui/Viewport.jsx';
+import { ArenaPlayers } from './ui/ArenaPlayers.jsx';
+import { TopNav } from './ui/TopNav.jsx';
 import { AudioSettings, useArcadeAudio } from './ui/AudioSettings.jsx';
 import { cpuInput } from './game/cpu.js';
 import { BattleOptions, PowerupLegend } from './ui/BattleOptions.jsx';
 import { DeathView } from './game/death-view.js';
+import {
+  DEFAULT_BATTLE_OPTIONS,
+  clearLocalStorage,
+  loadBattleOptions,
+  loadBombFlash,
+  saveBattleOptions,
+  saveBombFlash,
+} from './ui/preferences.js';
+
+const PRACTICE_PLAYERS = [
+  { color: 0, name: 'Mint', cpu: false },
+  { color: 1, name: 'Amber', cpu: true },
+  { color: 2, name: 'Violet', cpu: true },
+  { color: 3, name: 'Rose', cpu: true },
+];
+
 export function App() {
   const [online, setOnline] = useState(() => {
     const params = new URLSearchParams(window.location.search);
-    return params.get('mode') === 'online' || params.has('room');
+    return params.has('room') || params.get('mode') !== 'offline';
   });
+  const [coarsePointer, setCoarsePointer] = useState(() => matchMedia('(pointer: coarse)').matches);
+  const [aspectOverride, setAspectOverride] = useState(null);
+  useEffect(() => {
+    const pointer = matchMedia('(pointer: coarse)');
+    const update = () => setCoarsePointer(pointer.matches);
+    pointer.addEventListener('change', update);
+    return () => pointer.removeEventListener('change', update);
+  }, []);
+  const aspect = aspectOverride ?? (coarsePointer ? 'portrait' : 'landscape');
+  const toggleAspect = () => setAspectOverride(aspect === 'landscape' ? 'portrait' : 'landscape');
   return online ? (
-    <Online onExit={() => setOnline(false)} />
+    <Online aspect={aspect} onExit={() => setOnline(false)} onAspectChange={toggleAspect} />
   ) : (
-    <Practice onOnline={() => setOnline(true)} />
+    <Practice aspect={aspect} onOnline={() => setOnline(true)} onAspectChange={toggleAspect} />
   );
 }
-function Practice({ onOnline }) {
+function Practice({ aspect, onOnline, onAspectChange }) {
   const sound = useArcadeAudio();
-  const [options, setOptions] = useState({ cpu: 'MED', map: 'LOW', plant: false }),
+  const [options, setOptions] = useState(loadBattleOptions),
     optionRef = useRef(options),
     brains = useRef(new Map()),
     death = useRef(new DeathView());
   const [frozen, setFrozen] = useState(false),
-    [bombFlash, setBombFlash] = useState(
-      () => localStorage.getItem('bomberman-bomb-flash') !== 'off',
-    ),
+    [bombFlash, setBombFlash] = useState(loadBombFlash),
     flash = useRef(bombFlash);
   const changeFlash = (value) => {
     flash.current = value;
     setBombFlash(value);
-    localStorage.setItem('bomberman-bomb-flash', value ? 'on' : 'off');
+    saveBombFlash(value);
   };
   const canvas = useRef(null),
-    game = useRef(createGame(['practice', 'cpu:1', 'cpu:2', 'cpu:3'])),
+    game = useRef(
+      createGame(
+        ['practice', 'cpu:1', 'cpu:2', 'cpu:3'],
+        1,
+        options.map,
+        options.plant,
+        options.chainReaction,
+      ),
+    ),
     controls = useRef(null),
     gestures = useRef(null);
   if (!gestures.current) gestures.current = createGestureHandlers(controls);
   const [message, setMessage] = useState('Starting Babylon Lite…'),
     [paused, setPaused] = useState(false),
     [alive, setAlive] = useState(true),
-    [scale, setScale] = useState(''),
     [settings, setSettings] = useState(false),
+    [clearMessage, setClearMessage] = useState(''),
     [stats, setStats] = useState('1 BOMB · RANGE 2 · SPEED 0');
   useEffect(() => {
     let cancelled = false,
@@ -77,7 +111,6 @@ function Practice({ onOnline }) {
       setStats(
         `${game.current.players[0].capacity} BOMB · RANGE ${game.current.players[0].range} · SPEED ${game.current.players[0].speedLevel}`,
       );
-      setScale(`${mapping.tilePixels}px / tile`);
       frame = requestAnimationFrame(loop);
     };
     createGameRenderer(canvas.current)
@@ -115,6 +148,7 @@ function Practice({ onOnline }) {
       1,
       optionRef.current.map,
       optionRef.current.plant,
+      optionRef.current.chainReaction,
     );
     brains.current.clear();
     death.current.reset();
@@ -123,30 +157,58 @@ function Practice({ onOnline }) {
     setAlive(true);
     setSettings(false);
   };
+  const clearSettings = () => {
+    clearLocalStorage();
+    const defaults = { ...DEFAULT_BATTLE_OPTIONS };
+    optionRef.current = defaults;
+    setOptions(defaults);
+    flash.current = true;
+    setBombFlash(true);
+    restart();
+    pause(true);
+    setSettings(true);
+    setClearMessage('Local storage cleared.');
+  };
+  const toggleSettings = () => {
+    setClearMessage('');
+    setSettings(!settings);
+    pause(!settings);
+  };
   return (
-    <Viewport>
-      <div className="game-layout">
+    <Viewport aspect={aspect}>
+      <div
+        className="game-layout"
+        style={{
+          '--arena-columns': game.current.width,
+          '--arena-rows': game.current.height,
+        }}
+      >
         <div className="arena-slot">
-          <div className="arena-square" data-render-area {...gestures.current.arena}>
-            <canvas ref={canvas} aria-label="Bomberman practice arena" />
-          </div>
+          <ArenaPlayers
+            players={PRACTICE_PLAYERS}
+            canvas={canvas}
+            gestures={gestures.current}
+            arenaLabel="Bomberman practice arena"
+            mapWidth={game.current.width}
+            mapHeight={game.current.height}
+            localPlayerColor={0}
+          />
         </div>
-        <section className="game-panel" data-information-panel {...gestures.current.panel}>
+        <section
+          className="game-panel practice-game-panel"
+          data-information-panel
+          {...gestures.current.panel}
+        >
           <header className="panel-header">
             <header className="corner corner_top_left">
-              <span className="eyebrow">ARCADE / LOCAL PRACTICE</span>
               <h1>Bomberman Clone</h1>
             </header>
-            <nav className="corner corner_top_right">
-              <button onClick={onOnline}>Play online</button>
-              <a
-                href="https://github.com/SamuelAsherRivello/babylon-lite-bomberman-clone"
-                target="_blank"
-                rel="noreferrer"
-              >
-                GitHub ↗
-              </a>
-            </nav>
+            <TopNav
+              online={false}
+              aspect={aspect}
+              onModeChange={onOnline}
+              onAspectChange={onAspectChange}
+            />
           </header>
           <div className="panel-content">
             <div className="hud">
@@ -162,6 +224,8 @@ function Practice({ onOnline }) {
                   const next = { ...optionRef.current, ...patch };
                   optionRef.current = next;
                   setOptions(next);
+                  saveBattleOptions(next);
+                  setClearMessage('');
                   restart();
                 }}
                 bombFlash={bombFlash}
@@ -176,39 +240,37 @@ function Practice({ onOnline }) {
           </div>
           <footer className="panel-footer">
             <section className="corner corner_bottom_left">
-              <button
-                onClick={() => {
-                  setSettings(!settings);
-                  pause(!settings);
-                }}
-              >
-                ⚙ Settings
-              </button>
-              {settings && (
-                <div className="settings">
-                  <AudioSettings sound={sound} />
-                  <button
-                    onClick={() => {
-                      const operation = document.fullscreenElement
-                        ? document.exitFullscreen()
-                        : document.documentElement.requestFullscreen();
-                      operation?.catch(() =>
-                        setMessage('Fullscreen is unavailable in this browser.'),
-                      );
-                    }}
-                  >
-                    Fullscreen
-                  </button>
-                  <button onClick={restart}>Restart practice</button>
-                  <p>2DPixelPerfect · {scale}</p>
-                </div>
-              )}
+              <button onClick={toggleSettings}>⚙ Settings</button>
             </section>
             <div className="corner corner_bottom_right">
               v{versionText.trim().replace(/^version=/, '')}
               <span>LOCAL PRACTICE</span>
             </div>
           </footer>
+          {settings && (
+            <div className="overlay settings-overlay">
+              <div className="settings-content">
+                <h2>Settings</h2>
+                <AudioSettings sound={sound} />
+                <button
+                  onClick={() => {
+                    const operation = document.fullscreenElement
+                      ? document.exitFullscreen()
+                      : document.documentElement.requestFullscreen();
+                    operation?.catch(() =>
+                      setMessage('Fullscreen is unavailable in this browser.'),
+                    );
+                  }}
+                >
+                  Fullscreen
+                </button>
+                <button onClick={restart}>Restart practice</button>
+                <button onClick={clearSettings}>Clear Local Storage</button>
+                {clearMessage && <p role="status">{clearMessage}</p>}
+                <button onClick={toggleSettings}>Resume</button>
+              </div>
+            </div>
+          )}
           {message && (
             <div className="overlay" role="status">
               <h2>Getting ready</h2>
