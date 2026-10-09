@@ -202,7 +202,7 @@ input:focus-visible {
   box-shadow: 1px 1px 2px rgb(0 0 0 / 50%);
 }
 .player-label-local {
-  border: 1px solid #f0d9a2;
+  border: 2px solid #f0d9a2;
 }
 .arena-label-row .player-label:first-child {
   margin-left: 8px;
