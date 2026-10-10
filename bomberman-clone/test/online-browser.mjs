@@ -296,7 +296,7 @@ try {
     Math.hypot(still.x - stopped.x, still.y - stopped.y) < 0.01,
     'settings neutralizes held movement while shared server continues',
   );
-  await a.getByRole('button', { name: 'Resume', exact: true }).click();
+  await a.getByRole('button', { name: 'Back', exact: true }).click();
   await a.keyboard.up('ArrowDown');
   await a.evaluate(() => window.restoreTransport());
   await a.waitForTimeout(350);

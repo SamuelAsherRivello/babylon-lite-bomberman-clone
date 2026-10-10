@@ -7,41 +7,31 @@ export function BattleOptions({
   bombFlash,
   onBombFlash,
   showChainReaction = true,
+  explosionStyle = 'classic',
+  onExplosionStyle,
+  mode,
+  onModeChange,
 }) {
   return (
-    <div className="battle-options">
-      <div className="battle-options-selects">
-        <label>
-          CPU:{' '}
-          <select
-            aria-label="CPU difficulty"
-            title="Sets how smart the computer-controlled players are: Low, Med, or Hard."
-            value={options.cpu}
-            disabled={disabled}
-            onChange={(e) => onChange({ cpu: e.target.value })}
+    <div className={`battle-options${mode ? ' battle-options-with-mode' : ''}`}>
+      <h3 className="battle-options-heading">Toggles</h3>
+      {mode && onModeChange && (
+        <div className="toggle-button-container toggle-button-container-single battle-options-mode">
+          <button
+            type="button"
+            aria-pressed="true"
+            aria-label={`Mode: ${mode === 'offline' ? 'Offline' : 'Online'}`}
+            title={
+              mode === 'offline' ? 'Switch to online multiplayer.' : 'Switch to offline practice.'
+            }
+            onClick={onModeChange}
           >
-            {['LOW', 'MED', 'HARD'].map((v) => (
-              <option key={v}>{v}</option>
-            ))}
-          </select>
-        </label>
-        <label>
-          MAP:{' '}
-          <select
-            aria-label="Map size"
-            title="Sets the arena size: Low is smallest, Med is larger, and High is largest."
-            value={options.map}
-            disabled={disabled}
-            onChange={(e) => onChange({ map: e.target.value })}
-          >
-            {['LOW', 'MED', 'HIGH'].map((v) => (
-              <option key={v}>{v}</option>
-            ))}
-          </select>
-        </label>
-      </div>
+            Mode: {mode === 'offline' ? 'Offline' : 'Online'}
+          </button>
+        </div>
+      )}
       <div
-        className={`battle-options-toggles${showChainReaction ? '' : ' battle-options-toggles-two'}`}
+        className={`toggle-button-container${showChainReaction ? '' : ' toggle-button-container-two'}`}
       >
         <button
           type="button"
@@ -71,6 +61,46 @@ export function BattleOptions({
         >
           Bomb Flash: {bombFlash ? 'On' : 'Off'}
         </button>
+        <button
+          type="button"
+          aria-pressed={explosionStyle === 'pfx'}
+          title="Classic keeps the original blast art. PFX previews the blast path with looping smoke and one-shot fire."
+          disabled={disabled}
+          onClick={() => onExplosionStyle?.(explosionStyle === 'pfx' ? 'classic' : 'pfx')}
+        >
+          Explosion: {explosionStyle === 'pfx' ? 'PFX' : 'Classic'}
+        </button>
+      </div>
+      <h3 className="battle-options-heading">Dropdowns</h3>
+      <div className="battle-options-selects">
+        <label>
+          MAP SIZE:{' '}
+          <select
+            aria-label="Map size"
+            title="Sets the arena size: Low is smallest, Med is larger, and High is largest."
+            value={options.map}
+            disabled={disabled}
+            onChange={(e) => onChange({ map: e.target.value })}
+          >
+            {['LOW', 'MED', 'HIGH'].map((v) => (
+              <option key={v}>{v}</option>
+            ))}
+          </select>
+        </label>
+        <label>
+          CPU DIFFICULTY:{' '}
+          <select
+            aria-label="CPU difficulty"
+            title="Sets how smart the computer-controlled players are: Low, Med, or Hard."
+            value={options.cpu}
+            disabled={disabled}
+            onChange={(e) => onChange({ cpu: e.target.value })}
+          >
+            {['LOW', 'MED', 'HARD'].map((v) => (
+              <option key={v}>{v}</option>
+            ))}
+          </select>
+        </label>
       </div>
     </div>
   );

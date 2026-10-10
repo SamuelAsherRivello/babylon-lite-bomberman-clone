@@ -121,6 +121,24 @@ try {
       [...bytes],
     );
   }
+  async function cellSignature(tx, ty) {
+    const bytes = await page.locator('#visual-fixture').screenshot();
+    return page.evaluate(
+      async ({ data, tx, ty }) => {
+        const image = await createImageBitmap(
+          new Blob([new Uint8Array(data)], { type: 'image/png' }),
+        );
+        const canvas = new OffscreenCanvas(image.width, image.height),
+          ctx = canvas.getContext('2d');
+        ctx.drawImage(image, 0, 0);
+        const pixels = ctx.getImageData(tx * 32, ty * 32, 32, 32).data;
+        let hash = 0;
+        for (const value of pixels) hash = (hash * 31 + value) >>> 0;
+        return hash;
+      },
+      { data: [...bytes], tx, ty },
+    );
+  }
   const first = await pixels();
   assert.ok(first.glove && first.lightning && first.plant);
   assert.ok(
@@ -136,6 +154,47 @@ try {
   }
   assert.deepEqual(warning, [255, 207, 105], 'imminent wall has a visible pulsing border');
   assert.ok(first.colors.every(Boolean), 'four original couriers remain distinct');
+  const classicCell = await cellSignature(2, 3);
+  await page.evaluate(() => {
+    window.visualFixture.state.explosionStyle = 'pfx';
+    window.visualFixture.state.bombs = [{ id: 21, x: 3, y: 3, range: 2, deadline: 150 }];
+    window.visualFixture.state.blasts = [];
+  });
+  await page.waitForTimeout(120);
+  const fuseFrame = await cellSignature(2, 3);
+  assert.equal(fuseFrame, classicCell, 'PFX shows no smoke during the fuse');
+  await page.evaluate(() => {
+    window.visualFixture.state.bombs = [];
+    window.visualFixture.state.blasts = [{ id: 21, cells: [47], until: 30 }];
+  });
+  await page.waitForTimeout(120);
+  const smokeFrame = await cellSignature(2, 3);
+  assert.notEqual(smokeFrame, classicCell, 'FirePlume appears at blast start');
+  await page.waitForTimeout(120);
+  const fireFrame = await cellSignature(2, 3);
+  assert.notEqual(smokeFrame, fireFrame, 'FirePlume advances before the puff begins');
+  await page.waitForTimeout(360);
+  const puffFrame = await cellSignature(2, 3);
+  assert.notEqual(puffFrame, fireFrame, 'SmokePoff begins on FirePlume frame 4');
+  await page.waitForTimeout(120);
+  const puffLoopFrame = await cellSignature(2, 3);
+  assert.notEqual(puffFrame, puffLoopFrame, 'SmokePoff advances during the crossfade');
+  await page.evaluate(() => {
+    window.visualFixture.state.blasts = [];
+  });
+  await page.waitForTimeout(1600);
+  const retiredFrame = await cellSignature(2, 3);
+  await page.waitForTimeout(120);
+  assert.equal(
+    await cellSignature(2, 3),
+    retiredFrame,
+    'PFX effects retire after their animations',
+  );
+  await page.evaluate(() => {
+    window.visualFixture.state.explosionStyle = 'classic';
+    window.visualFixture.state.bombs = [{ id: 1, x: 3, y: 3, deadline: 150 }];
+    window.visualFixture.state.blasts = [{ id: 2, cells: [64], until: 30 }];
+  });
   for (const [tick, expected] of [
     [119, false],
     [120, true],

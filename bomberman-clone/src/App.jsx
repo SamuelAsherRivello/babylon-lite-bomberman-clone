@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState } from 'react';
+import { useEffect, useLayoutEffect, useRef, useState } from 'react';
 import { createGame, stepGame, STEP } from './game/rules.js';
 import { createGameRenderer } from './content/renderer.js';
 import { createControls, createGestureHandlers } from './input/controls.js';
@@ -11,13 +11,21 @@ import { AudioSettings, useArcadeAudio } from './ui/AudioSettings.jsx';
 import { cpuInput } from './game/cpu.js';
 import { BattleOptions, PowerupLegend } from './ui/BattleOptions.jsx';
 import { DeathView } from './game/death-view.js';
+import { createScreenTransition } from './ui/screen-transition.js';
+import { createWorldChangeQueue } from './game/world-change-queue.js';
 import {
   DEFAULT_BATTLE_OPTIONS,
   clearLocalStorage,
   loadBattleOptions,
   loadBombFlash,
+  loadAspect,
+  loadOnlineMode,
+  loadExplosionStyle,
   saveBattleOptions,
   saveBombFlash,
+  saveAspect,
+  saveOnlineMode,
+  saveExplosionStyle,
 } from './ui/preferences.js';
 
 const PRACTICE_PLAYERS = [
@@ -30,10 +38,23 @@ const PRACTICE_PLAYERS = [
 export function App() {
   const [online, setOnline] = useState(() => {
     const params = new URLSearchParams(window.location.search);
-    return params.has('room') || params.get('mode') !== 'offline';
+    if (params.has('room') || params.get('mode') !== 'offline') {
+      if (params.has('room') || params.get('mode') === 'online') return true;
+    }
+    if (params.get('mode') === 'offline') return false;
+    return loadOnlineMode();
   });
   const [coarsePointer, setCoarsePointer] = useState(() => matchMedia('(pointer: coarse)').matches);
-  const [aspectOverride, setAspectOverride] = useState(null);
+  const [aspectOverride, setAspectOverride] = useState(loadAspect);
+  const [pendingMode, setPendingMode] = useState(null);
+  const [modeTransition, setModeTransition] = useState({
+    parent: 'game-world',
+    type: 'screen-door',
+    phase: 'idle',
+    progress: 1,
+    easedProgress: 1,
+  });
+  const modeTransitionRef = useRef(createScreenTransition());
   useEffect(() => {
     const pointer = matchMedia('(pointer: coarse)');
     const update = () => setCoarsePointer(pointer.matches);
@@ -41,14 +62,104 @@ export function App() {
     return () => pointer.removeEventListener('change', update);
   }, []);
   const aspect = aspectOverride ?? (coarsePointer ? 'portrait' : 'landscape');
-  const toggleAspect = () => setAspectOverride(aspect === 'landscape' ? 'portrait' : 'landscape');
-  return online ? (
-    <Online aspect={aspect} onExit={() => setOnline(false)} onAspectChange={toggleAspect} />
-  ) : (
-    <Practice aspect={aspect} onOnline={() => setOnline(true)} onAspectChange={toggleAspect} />
+  const toggleAspect = () => {
+    const next = aspect === 'landscape' ? 'portrait' : 'landscape';
+    saveAspect(next);
+    setAspectOverride(next);
+  };
+  const resetPreferences = () => setAspectOverride(null);
+  const requestMode = (nextOnline) => {
+    if (nextOnline === online || pendingMode !== null) return;
+    setPendingMode(nextOnline);
+  };
+  useEffect(() => {
+    if (pendingMode === null) return undefined;
+    let frame;
+    const loop = (now) => {
+      const transition = modeTransitionRef.current;
+      transition.ensure(`mode:${pendingMode}`, { online: pendingMode }, now / 1000, {
+        onUpdate: setModeTransition,
+        onMiddle: () => {
+          saveOnlineMode(pendingMode);
+          setOnline(pendingMode);
+          transition.continue();
+        },
+        onDone: () => setPendingMode(null),
+      });
+      transition.tick(now / 1000);
+      frame = requestAnimationFrame(loop);
+    };
+    frame = requestAnimationFrame(loop);
+    return () => cancelAnimationFrame(frame);
+  }, [pendingMode]);
+  return (
+    <>
+      {online ? (
+        <Online
+          aspect={aspect}
+          onExit={() => requestMode(false)}
+          onAspectChange={toggleAspect}
+          onResetPreferences={resetPreferences}
+        />
+      ) : (
+        <Practice
+          aspect={aspect}
+          onOnline={() => requestMode(true)}
+          onAspectChange={toggleAspect}
+          onResetPreferences={resetPreferences}
+        />
+      )}
+      <ModeScreenDoor transition={modeTransition} modeKey={online} />
+    </>
   );
 }
-function Practice({ aspect, onOnline, onAspectChange }) {
+
+function ModeScreenDoor({ transition, modeKey }) {
+  const [bounds, setBounds] = useState(null);
+  useLayoutEffect(() => {
+    const update = () => {
+      const stage = document.querySelector('.arena-stage');
+      if (!stage) return;
+      const rect = stage.getBoundingClientRect();
+      setBounds({ left: rect.left, top: rect.top, width: rect.width, height: rect.height });
+    };
+    update();
+    const stage = document.querySelector('.arena-stage');
+    const observer = new ResizeObserver(update);
+    if (stage) observer.observe(stage);
+    window.addEventListener('resize', update);
+    return () => {
+      observer.disconnect();
+      window.removeEventListener('resize', update);
+    };
+  }, [modeKey, transition.phase]);
+  if (!bounds || transition.phase === 'idle') return null;
+  const progress = Math.max(0, Math.min(1, transition.easedProgress ?? 1));
+  const opening = transition.phase === 'opening';
+  const leftTransform = opening
+    ? `translateX(${-100 * progress}%)`
+    : `translateX(${-100 + 100 * progress}%)`;
+  const rightTransform = opening
+    ? `translateX(${100 * progress}%)`
+    : `translateX(${100 - 100 * progress}%)`;
+  return (
+    <div
+      className="screen-transition mode-screen-transition"
+      data-parent={transition.parent}
+      data-type={transition.type}
+      data-phase={transition.phase}
+      style={{
+        ...bounds,
+        '--screen-door-art': `url("${import.meta.env.BASE_URL}assets/door-half.png")`,
+      }}
+      aria-hidden="true"
+    >
+      <div className="screen-door screen-door-left" style={{ transform: leftTransform }} />
+      <div className="screen-door screen-door-right" style={{ transform: rightTransform }} />
+    </div>
+  );
+}
+function Practice({ aspect, onOnline, onAspectChange, onResetPreferences }) {
   const sound = useArcadeAudio();
   const [options, setOptions] = useState(loadBattleOptions),
     optionRef = useRef(options),
@@ -56,13 +167,33 @@ function Practice({ aspect, onOnline, onAspectChange }) {
     death = useRef(new DeathView());
   const [frozen, setFrozen] = useState(false),
     [bombFlash, setBombFlash] = useState(loadBombFlash),
-    flash = useRef(bombFlash);
+    flash = useRef(bombFlash),
+    [explosionStyle, setExplosionStyle] = useState(loadExplosionStyle),
+    explosion = useRef(explosionStyle);
+  const [screenTransition, setScreenTransition] = useState({
+    parent: 'game-world',
+    type: 'screen-door',
+    phase: 'idle',
+    progress: 1,
+    easedProgress: 1,
+  });
   const changeFlash = (value) => {
     flash.current = value;
     setBombFlash(value);
     saveBombFlash(value);
+    restart();
+  };
+  const changeExplosionStyle = (value) => {
+    const next = value === 'pfx' ? 'pfx' : 'classic';
+    explosion.current = next;
+    setExplosionStyle(next);
+    saveExplosionStyle(next);
+    restart();
   };
   const canvas = useRef(null),
+    screenTransitionRef = useRef(createScreenTransition()),
+    worldChanges = useRef(createWorldChangeQueue()),
+    worldVersion = useRef(0),
     game = useRef(
       createGame(
         ['practice', 'cpu:1', 'cpu:2', 'cpu:3'],
@@ -91,10 +222,41 @@ function Practice({ aspect, onOnline, onAspectChange }) {
     controls.current = input;
     const loop = (now) => {
       if (cancelled) return;
+      const nowSeconds = now / 1000;
+      const queuedChange = worldChanges.current.peek();
+      screenTransitionRef.current.ensure(
+        queuedChange?.id ?? worldVersion.current,
+        game.current,
+        nowSeconds,
+        {
+          onUpdate: setScreenTransition,
+          onSwap: () => {
+            const request = worldChanges.current.consume(queuedChange?.id);
+            if (!request) return null;
+            worldVersion.current = request.id;
+            game.current = createGame(
+              ['practice', 'cpu:1', 'cpu:2', 'cpu:3'],
+              1,
+              request.options.map,
+              request.options.plant,
+              request.options.chainReaction,
+            );
+            brains.current.clear();
+            death.current.reset();
+            setFrozen(false);
+            setPaused(false);
+            setAlive(true);
+            request.onDone?.();
+            return game.current;
+          },
+          onMiddle: () => screenTransitionRef.current.continue(),
+        },
+      );
+      screenTransitionRef.current.tick(nowSeconds);
       accumulator += Math.min((now - last) / 1000, 0.1);
       last = now;
       while (accumulator >= STEP) {
-        if (!death.current.frozen(now)) {
+        if (!screenTransitionRef.current.isBlocking() && !death.current.frozen(now)) {
           const commands = { practice: input.read() };
           for (const p of game.current.players.slice(1))
             commands[p.id] = cpuInput(game.current, p.id, brains.current, optionRef.current.cpu);
@@ -104,8 +266,9 @@ function Practice({ aspect, onOnline, onAspectChange }) {
       }
       const shown = death.current.draw(game.current, 'practice', now);
       shown.bombFlash = flash.current;
+      shown.explosionStyle = explosion.current;
       setFrozen(death.current.frozen(now));
-      const mapping = renderer.draw(shown);
+      const mapping = renderer.draw(screenTransitionRef.current.present(shown));
       sound.audio.current?.observe(game.current);
       setAlive(game.current.players[0].alive);
       setStats(
@@ -143,31 +306,36 @@ function Practice({ aspect, onOnline, onAspectChange }) {
   };
   const restart = () => {
     controls.current?.clear();
-    game.current = createGame(
-      ['practice', 'cpu:1', 'cpu:2', 'cpu:3'],
-      1,
-      optionRef.current.map,
-      optionRef.current.plant,
-      optionRef.current.chainReaction,
-    );
-    brains.current.clear();
-    death.current.reset();
-    setFrozen(false);
-    setPaused(false);
-    setAlive(true);
+    worldChanges.current.request({
+      type: 'reset-world',
+      options: optionRef.current,
+    });
     setSettings(false);
   };
   const clearSettings = () => {
     clearLocalStorage();
+    onResetPreferences();
     const defaults = { ...DEFAULT_BATTLE_OPTIONS };
     optionRef.current = defaults;
     setOptions(defaults);
     flash.current = true;
     setBombFlash(true);
+    explosion.current = 'classic';
+    setExplosionStyle('classic');
+    saveExplosionStyle('classic');
+    sound.reset();
     restart();
     pause(true);
     setSettings(true);
     setClearMessage('Local storage cleared.');
+  };
+  const changeBattleOptions = (patch) => {
+    const next = { ...optionRef.current, ...patch };
+    optionRef.current = next;
+    setOptions(next);
+    saveBattleOptions(next);
+    setClearMessage('');
+    restart();
   };
   const toggleSettings = () => {
     setClearMessage('');
@@ -183,7 +351,7 @@ function Practice({ aspect, onOnline, onAspectChange }) {
           '--arena-rows': game.current.height,
         }}
       >
-        <div className="arena-slot">
+        <div className="game-view arena-slot">
           <ArenaPlayers
             players={PRACTICE_PLAYERS}
             canvas={canvas}
@@ -192,53 +360,48 @@ function Practice({ aspect, onOnline, onAspectChange }) {
             mapWidth={game.current.width}
             mapHeight={game.current.height}
             localPlayerColor={0}
+            transitionState={screenTransition}
           />
         </div>
         <section
-          className="game-panel practice-game-panel"
+          className="menu-view game-panel practice-menu-view practice-game-panel"
           data-information-panel
           {...gestures.current.panel}
         >
-          <header className="panel-header">
+          <header className="panel-header menu-section menu-section-header">
             <header className="corner corner_top_left">
               <h1>Bomberman Clone</h1>
             </header>
-            <TopNav
-              online={false}
-              aspect={aspect}
-              onModeChange={onOnline}
-              onAspectChange={onAspectChange}
-            />
+            <TopNav online={false} />
           </header>
           <div className="panel-content">
-            <div className="hud">
+            <div className="hud menu-section menu-section-status">
               <span className={alive ? 'live' : 'out'}>
                 {alive ? '● READY TO BLAST' : '● ELIMINATED'}
               </span>
               <span>{stats}</span>
             </div>
-            <aside className="legend-rail">
+            <section className="menu-section menu-section-controls">
               <BattleOptions
                 options={options}
-                onChange={(patch) => {
-                  const next = { ...optionRef.current, ...patch };
-                  optionRef.current = next;
-                  setOptions(next);
-                  saveBattleOptions(next);
-                  setClearMessage('');
-                  restart();
-                }}
+                onChange={changeBattleOptions}
                 bombFlash={bombFlash}
                 onBombFlash={changeFlash}
+                explosionStyle={explosionStyle}
+                onExplosionStyle={changeExplosionStyle}
+                mode="offline"
+                onModeChange={onOnline}
               />
+            </section>
+            <section className="menu-section menu-section-powerups">
               <PowerupLegend />
-            </aside>
-            <div className="instructions">
+            </section>
+            <div className="instructions menu-section menu-section-instructions">
               MOVE <kbd>WASD</kbd> / <kbd>↑↓←→</kbd> · BOMB <kbd>SPACE</kbd>
               <span>Place. Escape. Repeat.</span>
             </div>
           </div>
-          <footer className="panel-footer">
+          <footer className="panel-footer menu-section menu-section-footer">
             <section className="corner corner_bottom_left">
               <button onClick={toggleSettings}>⚙ Settings</button>
             </section>
@@ -253,6 +416,14 @@ function Practice({ aspect, onOnline, onAspectChange }) {
                 <h2>Settings</h2>
                 <AudioSettings sound={sound} />
                 <button
+                  className="settings-toggle-button"
+                  type="button"
+                  aria-pressed={aspect === 'portrait'}
+                  onClick={onAspectChange}
+                >
+                  Aspect: {aspect === 'landscape' ? 'Landscape' : 'Portrait'}
+                </button>
+                <button
                   onClick={() => {
                     const operation = document.fullscreenElement
                       ? document.exitFullscreen()
@@ -264,10 +435,11 @@ function Practice({ aspect, onOnline, onAspectChange }) {
                 >
                   Fullscreen
                 </button>
-                <button onClick={restart}>Restart practice</button>
                 <button onClick={clearSettings}>Clear Local Storage</button>
                 {clearMessage && <p role="status">{clearMessage}</p>}
-                <button onClick={toggleSettings}>Resume</button>
+                <button className="settings-back-button" onClick={toggleSettings}>
+                  Back
+                </button>
               </div>
             </div>
           )}

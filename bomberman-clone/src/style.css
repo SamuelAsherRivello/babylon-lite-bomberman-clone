@@ -140,6 +140,7 @@ input:focus-visible {
   min-width: 0;
   min-height: 0;
 }
+.game-view,
 .arena-slot {
   display: grid;
   place-items: center;
@@ -229,6 +230,42 @@ input:focus-visible {
   container-type: size;
   touch-action: none;
 }
+.screen-transition {
+  position: absolute;
+  inset: 0;
+  z-index: 3;
+  overflow: hidden;
+  pointer-events: none;
+}
+.mode-screen-transition {
+  position: fixed;
+}
+.screen-transition[data-phase='idle'] {
+  display: none;
+}
+.screen-door {
+  position: absolute;
+  top: -1px;
+  bottom: -1px;
+  width: calc(50% + 1px);
+  overflow: hidden;
+}
+.screen-door::before {
+  position: absolute;
+  inset: 0;
+  content: '';
+  background: var(--screen-door-art) center / 100% 100% no-repeat;
+  image-rendering: auto;
+}
+.screen-door-right::before {
+  transform: scaleX(-1);
+}
+.screen-door-left {
+  left: 0;
+}
+.screen-door-right {
+  right: 0;
+}
 .arena-slot canvas {
   position: absolute;
   inset: 0;
@@ -238,20 +275,51 @@ input:focus-visible {
   image-rendering: pixelated;
   touch-action: none;
 }
+.menu-view,
 .game-panel {
   position: relative;
   display: grid;
   grid-template-rows: auto minmax(0, 1fr) auto;
-  gap: clamp(8px, 1.3vh, 16px);
+  gap: 0;
   min-width: 0;
   min-height: 0;
   overflow: hidden;
-  padding: clamp(12px, 1.8vw, 26px);
+  padding: clamp(8px, 1.2vw, 16px);
   background: #111920;
   border: 1px solid #27352f;
   pointer-events: auto;
   touch-action: none;
   container-type: size;
+}
+.menu-section {
+  margin-block: 5px;
+  padding: clamp(6px, 0.9cqw, 12px);
+  border: 1px solid #354943;
+  border-radius: 4px;
+}
+.menu-section-header {
+  background: #19262b;
+}
+.menu-section-status {
+  background: #202d2f;
+}
+.online-menu-view .menu-section-status,
+.online-game-panel .menu-section-status {
+  display: flex;
+  flex-direction: column;
+  gap: 5px;
+}
+.menu-section-controls {
+  background: #29302e;
+}
+.menu-section-powerups {
+  background: #252f31;
+}
+.menu-section-instructions {
+  background: #2b2931;
+}
+.menu-section-footer {
+  background: #1b2930;
 }
 .panel-header,
 .panel-footer {
@@ -344,9 +412,12 @@ h2 {
 .panel-content {
   display: flex;
   flex-direction: column;
-  gap: clamp(8px, 1.5vh, 16px);
+  gap: 0;
   min-width: 0;
   min-height: 0;
+}
+.panel-content > .menu-section {
+  flex: 0 1 auto;
 }
 .hud {
   display: flex;
@@ -375,8 +446,18 @@ h2 {
   gap: 7px;
   font-size: 12px;
 }
+.battle-options-with-mode {
+  position: static;
+}
+.battle-options-heading {
+  margin: 0;
+  color: #f0d9a2;
+  font-size: 10px;
+  letter-spacing: 1px;
+  line-height: 1;
+}
 .battle-options-selects,
-.battle-options-toggles {
+.toggle-button-container {
   display: grid;
   gap: 6px;
   min-width: 0;
@@ -384,11 +465,12 @@ h2 {
 .battle-options-selects {
   grid-template-columns: repeat(2, minmax(0, 1fr));
 }
-.battle-options-toggles {
-  grid-template-columns: repeat(3, minmax(0, 1fr));
-}
-.battle-options-toggles-two {
+.toggle-button-container,
+.toggle-button-container-two {
   grid-template-columns: repeat(2, minmax(0, 1fr));
+}
+.toggle-button-container-single {
+  grid-template-columns: minmax(0, 1fr);
 }
 .battle-options-selects label {
   display: flex;
@@ -397,8 +479,8 @@ h2 {
   gap: 4px;
   min-width: 0;
 }
-.battle-options-toggles button,
-.overlay .battle-options-toggles button {
+.toggle-button-container button,
+.overlay .toggle-button-container button {
   width: 100%;
   min-width: 0;
   margin: 0;
@@ -411,13 +493,14 @@ h2 {
   line-height: 1.15;
   white-space: normal;
 }
-.battle-options-toggles button[aria-pressed='true'],
-.overlay .battle-options-toggles button[aria-pressed='true'] {
-  border-color: #72c593;
-  background: #206b48;
+.toggle-button-container button[aria-pressed='true'],
+.overlay .toggle-button-container button[aria-pressed='true'] {
+  border-color: transparent;
+  background: #1d5e9c;
+  box-shadow: inset 0 0 0 1px rgb(121 184 255 / 55%);
 }
-.battle-options-toggles button:hover:not(:disabled),
-.overlay .battle-options-toggles button:hover:not(:disabled) {
+.toggle-button-container button:hover:not(:disabled),
+.overlay .toggle-button-container button:hover:not(:disabled) {
   filter: brightness(1.18);
 }
 .battle-options select {
@@ -556,6 +639,243 @@ kbd {
   font: inherit;
   letter-spacing: 2px;
 }
+.room-actions {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 10px;
+  width: min(100%, 520px);
+  margin: 10px auto 0;
+  text-align: left;
+}
+.room-action {
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+  min-height: 164px;
+  padding: 12px;
+  background: #182a2f;
+  border: 1px solid #496461;
+  border-radius: 6px;
+}
+.room-action-content {
+  flex: 1;
+}
+.room-action h3 {
+  margin: 0 0 8px;
+  color: #f0d9a2;
+  font-size: 16px;
+}
+.room-action p {
+  margin: 0;
+  color: #aec0b6;
+  line-height: 1.35;
+}
+.room-action label {
+  display: block;
+  margin: 12px 0 0;
+  color: #eceddc;
+  font-size: 12px;
+}
+.room-action input {
+  display: block;
+  width: 100%;
+  margin: 6px 0 0;
+  padding: 8px;
+  text-align: center;
+}
+.room-action button {
+  width: 100%;
+  margin: 12px 0 0;
+}
+.lobby-overlay {
+  align-items: center;
+  justify-content: flex-start;
+  overflow-y: auto;
+  padding: clamp(18px, 4cqw, 44px);
+  background: #101d23f2;
+  text-align: left;
+}
+.lobby-card {
+  width: min(100%, 620px);
+  margin: auto 0;
+  padding: clamp(14px, 2.2cqw, 24px);
+  background: #111f25;
+  border: 1px solid #66836c;
+  border-radius: 6px;
+  box-shadow: 0 18px 40px #07101499;
+}
+.lobby-heading,
+.lobby-section-heading,
+.lobby-share,
+.lobby-ready-row,
+.lobby-player {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+}
+.lobby-heading {
+  padding-bottom: 12px;
+  border-bottom: 1px solid #30453f;
+}
+.lobby-kicker,
+.lobby-phase,
+.lobby-section-heading > span,
+.lobby-colors > span,
+.lobby-start-group > span {
+  color: #8fc9b3;
+  font-size: 10px;
+  letter-spacing: 1.5px;
+}
+.lobby-phase {
+  padding: 5px 8px;
+  border: 1px solid #496f62;
+  border-radius: 999px;
+}
+.lobby-card h2 {
+  margin: 4px 0 0;
+  color: #f0d9a2;
+  font-size: clamp(24px, 4cqw, 34px);
+  line-height: 1;
+}
+.lobby-intro {
+  margin: 14px 0 16px;
+  color: #c0d3c5;
+  font-size: 14px;
+}
+.lobby-section {
+  margin-top: 10px;
+  padding: 12px;
+  background: #202d2f;
+  border: 1px solid #354943;
+  border-radius: 4px;
+}
+.lobby-section-heading {
+  margin-bottom: 10px;
+}
+.lobby-section h3 {
+  margin: 0;
+  color: #f0d9a2;
+  font-size: 16px;
+}
+.lobby-rules .battle-options {
+  font-size: 12px;
+}
+.lobby-share {
+  background: #252f31;
+}
+.lobby-share h3 {
+  margin-bottom: 4px;
+}
+.lobby-share p {
+  margin: 0;
+  color: #aec0b6;
+  font-size: 12px;
+}
+.lobby-ready-button {
+  flex: 0 0 auto;
+  padding: 9px 14px;
+  background: #206b48;
+  border-color: #72c593;
+  color: #fff7ee;
+  font-weight: 700;
+}
+.lobby-share button {
+  flex: 0 0 auto;
+  padding: 9px 14px;
+  background: #ebc47d;
+  color: #18202a;
+  font-weight: 700;
+}
+.lobby-ready-button:hover {
+  background: #2d855b;
+}
+.lobby-share .share-message {
+  min-width: 0;
+  color: #80e4bc;
+  font-size: 11px;
+}
+.lobby-players {
+  background: #252f31;
+}
+.lobby-players ul {
+  display: grid;
+  gap: 5px;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+.lobby-player {
+  padding: 7px 8px;
+  background: #182a2f;
+  color: #b9c6b8;
+  font-size: 11px;
+}
+.lobby-player-name {
+  display: flex;
+  align-items: center;
+  flex: 1 1 auto;
+  min-width: 0;
+  color: #eceddc;
+  font-weight: 700;
+}
+.lobby-player-name i {
+  width: 8px;
+  height: 8px;
+  margin-right: 7px;
+  border-radius: 50%;
+  background: currentColor;
+}
+.lobby-player-0 .lobby-player-name {
+  color: #79ded0;
+}
+.lobby-player-1 .lobby-player-name {
+  color: #fbad69;
+}
+.lobby-player-2 .lobby-player-name {
+  color: #b69bff;
+}
+.lobby-player-3 .lobby-player-name {
+  color: #ff7fa4;
+}
+.lobby-ready-row {
+  flex-direction: column;
+  align-items: stretch;
+  margin-top: 14px;
+}
+.lobby-colors {
+  flex: 1 1 auto;
+  min-width: 0;
+}
+.lobby-colors > div {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 5px;
+  margin-top: 6px;
+}
+.lobby-colors button {
+  padding: 7px 10px;
+  background: #ebc47d;
+  color: #18202a;
+  font-size: 12px;
+  font-weight: 700;
+}
+.lobby-colors button[aria-pressed='true'] {
+  box-shadow: inset 0 0 0 2px #fff1cc;
+}
+.lobby-colors button:disabled {
+  opacity: 0.38;
+}
+.lobby-ready-button {
+  width: 100%;
+}
+.lobby-start-group {
+  width: 100%;
+}
+.lobby-start-group > span {
+  display: block;
+  margin-bottom: 6px;
+}
 .settings-overlay {
   z-index: 6;
   align-items: center;
@@ -570,6 +890,24 @@ kbd {
   display: block;
   width: 100%;
   margin: 6px 0;
+}
+.settings-content .settings-toggle-button {
+  border: 1px solid #a66059;
+  background: #84342f;
+  color: #fff7ee;
+  font-weight: 700;
+}
+.settings-content .settings-toggle-button[aria-pressed='true'] {
+  border-color: transparent;
+  background: #1d5e9c;
+  box-shadow: inset 0 0 0 1px rgb(121 184 255 / 55%);
+}
+.settings-content .settings-toggle-button:hover:not(:disabled) {
+  filter: brightness(1.18);
+}
+.settings-content .settings-back-button {
+  background: #000;
+  color: #fff;
 }
 .settings-content .audio-settings {
   margin: 10px 0;
@@ -597,8 +935,9 @@ kbd {
   line-height: 1.15;
 }
 .audio-settings .audio-mute-toggle[aria-pressed='true'] {
-  border-color: #72c593;
-  background: #206b48;
+  border-color: transparent;
+  background: #1d5e9c;
+  box-shadow: inset 0 0 0 1px rgb(121 184 255 / 55%);
 }
 .audio-settings .audio-mute-toggle:hover:not(:disabled) {
   filter: brightness(1.18);
@@ -620,10 +959,10 @@ kbd {
     font-size: 13px;
   }
   .practice-game-panel .battle-options-selects,
-  .practice-game-panel .battle-options-toggles {
+  .practice-game-panel .toggle-button-container {
     gap: 8px;
   }
-  .practice-game-panel .battle-options-toggles button {
+  .practice-game-panel .toggle-button-container button {
     min-height: 56px;
     padding: 8px 5px;
   }
@@ -655,7 +994,6 @@ kbd {
 }
 .surface[data-aspect='portrait'] .game-panel {
   padding: 8px 10px;
-  gap: 6px;
 }
 .surface[data-aspect='portrait'] .panel-header {
   padding-bottom: 6px;
@@ -668,10 +1006,14 @@ kbd {
   display: grid;
   grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
   grid-template-rows: auto minmax(0, 1fr) auto;
-  gap: 5px 10px;
+  gap: 0 10px;
 }
 .surface[data-aspect='portrait'] .hud {
   grid-column: 1 / -1;
+}
+.surface[data-aspect='portrait'] .online-game-panel .menu-section-status {
+  grid-column: 1 / -1;
+  grid-row: 1;
 }
 .surface[data-aspect='portrait'] .legend-rail {
   grid-column: 1;
@@ -688,24 +1030,24 @@ kbd {
   margin: 0;
 }
 .surface[data-aspect='portrait'] .practice-game-panel .panel-content {
-  grid-template-rows: auto auto minmax(0, 1fr) auto;
-  gap: 5px 10px;
+  grid-template-rows: auto minmax(0, 1fr) auto;
 }
 .surface[data-aspect='portrait'] .practice-game-panel .legend-rail {
-  display: contents;
-}
-.surface[data-aspect='portrait'] .practice-game-panel .battle-options {
+  display: flex;
   grid-column: 1 / -1;
   grid-row: 2;
-  margin-top: 0;
+  flex-direction: column;
+  gap: 5px;
+  overflow-y: auto;
+}
+.surface[data-aspect='portrait'] .practice-game-panel .battle-options {
+  flex: 0 0 auto;
 }
 .surface[data-aspect='portrait'] .practice-game-panel .powerup-legend {
-  grid-column: 1;
-  grid-row: 3;
-  margin-top: 0;
+  flex: 0 0 auto;
 }
 .surface[data-aspect='portrait'] .practice-game-panel .instructions {
-  grid-row: 4;
+  grid-row: 3;
 }
 
 .surface[data-aspect='landscape'] .game-layout {
@@ -714,7 +1056,7 @@ kbd {
       0,
       min(
         calc((100cqh - 2 * var(--layout-inset)) * var(--arena-columns) / var(--arena-rows)),
-        calc(100cqw - 2 * var(--layout-inset) - var(--layout-gap) - min(250px, 45cqw))
+        calc(100cqw - 2 * var(--layout-inset) - var(--layout-gap) - min(340px, 52cqw))
       )
     )
     minmax(0, 1fr);
@@ -728,7 +1070,7 @@ kbd {
         0,
         min(
           calc((100cqh - 2 * var(--layout-inset)) * var(--arena-columns) / var(--arena-rows)),
-          calc(100cqw - 2 * var(--layout-inset) - var(--layout-gap) - min(290px, 60cqw))
+          calc(100cqw - 2 * var(--layout-inset) - var(--layout-gap) - min(340px, 70cqw))
         )
       )
       minmax(0, 1fr);
@@ -886,11 +1228,11 @@ kbd {
     font-size: 10px;
   }
   .battle-options-selects,
-  .battle-options-toggles {
+  .toggle-button-container {
     gap: 3px;
   }
-  .battle-options-toggles button,
-  .overlay .battle-options-toggles button {
+  .toggle-button-container button,
+  .overlay .toggle-button-container button {
     padding: 4px 2px;
   }
   .battle-options select {
@@ -962,6 +1304,20 @@ kbd {
   }
   .practice-game-panel .legend-rail {
     display: contents;
+  }
+  .practice-game-panel .battle-options {
+    gap: 1px;
+  }
+  .practice-game-panel .battle-options-selects,
+  .practice-game-panel .toggle-button-container {
+    gap: 1px;
+  }
+  .practice-game-panel .battle-options select,
+  .practice-game-panel .toggle-button-container button {
+    height: 16px;
+    min-height: 0;
+    padding: 1px 2px;
+    line-height: 1;
   }
   .practice-game-panel .powerup-legend {
     grid-column: 1 / -1;
@@ -1063,6 +1419,14 @@ kbd {
   .battle-options select {
     max-width: 76px;
     padding: 2px;
+  }
+  .practice-game-panel .toggle-button-container button {
+    height: 16px;
+    min-height: 0;
+    padding: 1px 2px;
+    line-height: 1;
+    white-space: nowrap;
+    font-size: 7px;
   }
   .powerup-legend {
     font-size: 7px;
@@ -1167,7 +1531,7 @@ kbd {
   .surface[data-aspect='portrait'] .practice-game-panel .battle-options {
     margin-top: 8px;
   }
-  .surface[data-aspect='portrait'] .practice-game-panel .battle-options-toggles button {
+  .surface[data-aspect='portrait'] .practice-game-panel .toggle-button-container button {
     min-height: 0;
     height: 36px;
     padding: 3px 4px;
@@ -1192,10 +1556,10 @@ kbd {
       font-size: 9px;
     }
     .practice-game-panel .battle-options-selects,
-    .practice-game-panel .battle-options-toggles {
+    .practice-game-panel .toggle-button-container {
       gap: 3px;
     }
-    .practice-game-panel .battle-options-toggles button {
+    .practice-game-panel .toggle-button-container button {
       min-height: 0;
       padding: 4px 2px;
     }
@@ -1223,10 +1587,105 @@ kbd {
       height: 24px;
       padding: 2px 6px;
     }
-    .practice-game-panel .battle-options-toggles button {
+    .practice-game-panel .toggle-button-container button {
       min-height: 0;
       height: 36px;
       padding: 3px 4px;
     }
   }
+}
+
+/* Keep the practice controls grouped as one menu section on compact layouts. */
+.practice-game-panel .panel-content {
+  grid-template-rows: auto auto auto minmax(0, 1fr);
+}
+.practice-game-panel .menu-section-controls {
+  grid-column: 1;
+  grid-row: 2;
+}
+.practice-game-panel .menu-section-powerups {
+  grid-column: 1;
+  grid-row: 3;
+  min-height: 0;
+  overflow-y: auto;
+}
+.practice-game-panel .battle-options,
+.practice-game-panel .powerup-legend {
+  grid-column: auto;
+  grid-row: auto;
+  margin-top: 0;
+}
+.practice-game-panel .instructions {
+  grid-row: 4;
+}
+.surface[data-aspect='portrait'] .practice-game-panel .menu-section-controls,
+.surface[data-aspect='portrait'] .practice-game-panel .menu-section-powerups {
+  grid-column: 1 / -1;
+}
+.surface[data-aspect='landscape'] .practice-game-panel .menu-section-controls,
+.surface[data-aspect='landscape'] .practice-game-panel .menu-section-powerups {
+  grid-column: 1;
+}
+
+/* Shared menu section rhythm: compact sides, generous vertical breathing room. */
+.menu-section {
+  margin-block: 0;
+  padding: 10px;
+}
+.game-panel {
+  row-gap: 12px;
+}
+.panel-content {
+  row-gap: 12px;
+  align-content: start;
+}
+
+/* Let every menu section size itself from its contents instead of filling a fixed row. */
+.panel-content {
+  grid-template-rows: none;
+  grid-auto-rows: max-content;
+}
+.practice-game-panel .panel-content,
+.surface[data-aspect='portrait'] .panel-content {
+  grid-template-rows: none;
+  grid-auto-rows: max-content;
+  row-gap: 12px;
+}
+.practice-game-panel .panel-content {
+  grid-template-rows: auto auto minmax(max-content, 1fr) auto;
+  align-content: stretch;
+}
+.practice-game-panel .menu-section-controls {
+  height: auto;
+  min-height: max-content;
+  align-self: start;
+}
+.practice-game-panel .menu-section-controls .battle-options,
+.practice-game-panel .menu-section-controls .toggle-button-container {
+  height: auto;
+  min-height: max-content;
+}
+.practice-game-panel .menu-section-controls .battle-options {
+  grid-template-rows: max-content max-content;
+  row-gap: 8px;
+}
+.practice-game-panel .menu-section-controls .toggle-button-container {
+  row-gap: 8px;
+}
+.practice-game-panel .menu-section-powerups {
+  height: auto;
+  min-height: 0;
+  align-self: stretch;
+}
+.practice-game-panel .menu-section-powerups {
+  overflow: visible;
+}
+.game-panel {
+  align-content: start;
+}
+.surface[data-aspect='portrait'] .game-panel {
+  grid-template-rows: max-content max-content max-content;
+}
+.surface[data-aspect='portrait'] .practice-game-panel .instructions {
+  grid-row: 4;
 }

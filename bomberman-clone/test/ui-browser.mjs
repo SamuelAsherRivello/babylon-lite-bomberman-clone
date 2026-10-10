@@ -237,13 +237,16 @@ async function inspect(page, aspect, label) {
       `${label}: ${name} remains inside the gameplay area`,
     );
   }
-  assert.equal(layout.controls.length, 3, `${label}: three navigation controls`);
-  assert.match(layout.controls[0].label, /^Mode: (Online|Offline)$/);
-  assert.match(layout.controls[1].label, /^Aspect: (Landscape|Portrait)$/);
-  assert.equal(layout.controls[2].label, 'GitHub');
-  assert.equal(layout.controls[0].visibleText, layout.controls[0].label);
-  assert.equal(layout.controls[1].visibleText, layout.controls[1].label);
-  assert.equal(layout.controls[2].visibleText, 'GitHub ↗');
+  assert.ok(
+    layout.controls.length >= 1 && layout.controls.length <= 2,
+    `${label}: compact navigation controls`,
+  );
+  if (layout.controls.length === 2) {
+    assert.match(layout.controls[0].label, /^Mode: Online$/);
+    assert.equal(layout.controls[0].visibleText, layout.controls[0].label);
+  }
+  assert.equal(layout.controls.at(-1).label, 'GitHub');
+  assert.equal(layout.controls.at(-1).visibleText, 'GitHub ↗');
   assert.equal(layout.github, github);
   for (const control of layout.controls) {
     assert.notEqual(control.display, 'none', `${label}: ${control.label} remains visible`);
@@ -255,8 +258,10 @@ async function inspect(page, aspect, label) {
       `${label}: ${control.label} stays inside viewport (${JSON.stringify(layout)})`,
     );
   }
-  assert.equal(layout.controls[2].background, layout.controls[0].background);
-  assert.equal(layout.controls[2].border, layout.controls[0].border);
+  const navigationStyle =
+    layout.controls.find((control) => control.label?.startsWith('Mode')) ?? layout.controls.at(-1);
+  assert.equal(layout.controls.at(-1).background, navigationStyle.background);
+  assert.equal(layout.controls.at(-1).border, navigationStyle.border);
 }
 
 async function inspectSettings(page, label) {
@@ -289,7 +294,9 @@ try {
   await inspect(desktop.page, 'landscape', 'desktop practice high map');
   await desktop.page.getByRole('combobox', { name: 'Map size' }).selectOption('MED');
   await inspect(desktop.page, 'landscape', 'desktop practice medium map');
+  await desktop.page.getByRole('button', { name: 'Settings' }).click();
   await desktop.page.getByRole('button', { name: 'Aspect: Landscape' }).click();
+  await desktop.page.getByRole('button', { name: 'Back' }).click();
   await inspect(desktop.page, 'portrait', 'desktop portrait practice');
   await desktop.page.getByRole('button', { name: 'Mode: Offline' }).click();
   await inspect(desktop.page, 'portrait', 'desktop portrait online');
@@ -300,7 +307,7 @@ try {
   await desktop.page.waitForFunction(() => Boolean(document.fullscreenElement));
   await inspect(desktop.page, 'portrait', 'desktop portrait fullscreen');
   await desktop.page.evaluate(() => document.exitFullscreen());
-  await desktop.page.getByRole('button', { name: 'Resume' }).click();
+  await desktop.page.getByRole('button', { name: 'Back' }).click();
   await desktop.page.reload();
   await desktop.page.getByRole('button', { name: 'Mode: Online' }).waitFor();
   await inspect(desktop.page, 'landscape', 'desktop reload resets aspect');
@@ -327,16 +334,20 @@ try {
     hasTouch: true,
   });
   const phone = await open(mobile);
-  await phone.page.getByRole('button', { name: 'Aspect: Portrait' }).waitFor();
+  await phone.page.getByRole('button', { name: 'Mode: Online' }).waitFor();
   await inspect(phone.page, 'portrait', 'mobile default online');
+  await phone.page.getByRole('button', { name: 'Settings' }).click();
   await phone.page.getByRole('button', { name: 'Aspect: Portrait' }).click();
+  await phone.page.getByRole('button', { name: 'Back' }).click();
   await inspect(phone.page, 'landscape', 'mobile landscape online');
   await phone.page.getByRole('button', { name: 'Mode: Online' }).click();
   await phone.page.getByText('Starting Babylon Lite…').waitFor({ state: 'hidden' });
   await inspect(phone.page, 'landscape', 'mobile landscape practice');
   await phone.page.setViewportSize({ width: 844, height: 390 });
   await inspect(phone.page, 'landscape', 'mobile landscape held sideways');
+  await phone.page.getByRole('button', { name: 'Settings' }).click();
   await phone.page.getByRole('button', { name: 'Aspect: Landscape' }).click();
+  await phone.page.getByRole('button', { name: 'Back' }).click();
   await inspect(phone.page, 'portrait', 'mobile portrait held sideways');
   await phone.page.getByRole('button', { name: 'Mode: Offline' }).click();
   await inspect(phone.page, 'portrait', 'mobile portrait online sideways');

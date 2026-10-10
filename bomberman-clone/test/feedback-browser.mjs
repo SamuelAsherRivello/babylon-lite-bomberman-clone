@@ -122,7 +122,7 @@ try {
   await page.getByRole('button', { name: 'Clear Local Storage' }).click();
   await page.getByText('Local storage cleared.').waitFor();
   assert.equal(await page.evaluate(() => localStorage.length), 0);
-  await page.getByRole('button', { name: 'Resume' }).click();
+  await page.getByRole('button', { name: 'Back' }).click();
   await page.getByRole('button', { name: 'Mode: Online' }).click();
   assert.equal(
     await page.getByRole('button', { name: 'Bomb Flash: On' }).getAttribute('aria-pressed'),

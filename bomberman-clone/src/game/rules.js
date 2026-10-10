@@ -92,9 +92,9 @@ export function createGame(
         else if (random() < 0.45) {
           const special = random();
           upgrade =
-            special < 0.035
+            special < 0.1
               ? 'glove'
-              : special < 0.075
+              : special < 0.14
                 ? 'shield'
                 : types[Math.floor(random() * types.length)];
         }

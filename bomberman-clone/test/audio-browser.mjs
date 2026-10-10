@@ -141,7 +141,7 @@ try {
     signals.filter((f) => f === 520).length >= 2,
     'pickup and victory both emit distinct event effects',
   );
-  await normal.getByRole('button', { name: 'Resume' }).click();
+  await normal.getByRole('button', { name: 'Back' }).click();
   await normal.getByRole('button', { name: 'Mode: Offline', exact: true }).click();
   await normal.waitForFunction(() => window.audioContexts[0].state === 'closed');
   assert.deepEqual(errors, []);

@@ -15,8 +15,10 @@ import {
   clearLocalStorage,
   loadBattleOptions,
   loadBombFlash,
+  loadExplosionStyle,
   saveBattleOptions,
   saveBombFlash,
+  saveExplosionStyle,
 } from './ui/preferences.js';
 
 const serverTarget = resolveMultiplayerServer(
@@ -28,21 +30,35 @@ const serverTarget = resolveMultiplayerServer(
 );
 export const SERVER = serverTarget.url;
 import { BattleOptions, PowerupLegend } from './ui/BattleOptions.jsx';
+import { createScreenTransition } from './ui/screen-transition.js';
 const COLORS = ['Mint', 'Amber', 'Violet', 'Rose'];
 
-export function Online({ aspect, onExit, onAspectChange }) {
+export function Online({ aspect, onExit, onAspectChange, onResetPreferences }) {
   const sound = useArcadeAudio();
   const [bombFlash, setBombFlash] = useState(loadBombFlash),
     flash = useRef(bombFlash);
+  const [explosionStyle, setExplosionStyle] = useState(loadExplosionStyle),
+    explosion = useRef(explosionStyle);
   const changeFlash = (value) => {
     flash.current = value;
     setBombFlash(value);
     saveBombFlash(value);
   };
+  const changeExplosionStyle = (value) => {
+    const next = value === 'pfx' ? 'pfx' : 'classic';
+    explosion.current = next;
+    setExplosionStyle(next);
+    saveExplosionStyle(next);
+  };
   const clearSettings = () => {
     clearLocalStorage();
+    onResetPreferences();
     flash.current = true;
     setBombFlash(true);
+    explosion.current = 'classic';
+    setExplosionStyle('classic');
+    saveExplosionStyle('classic');
+    sound.reset();
     setClearMessage('Local storage cleared.');
   };
   const [shareMessage, setShareMessage] = useState('');
@@ -52,6 +68,7 @@ export function Online({ aspect, onExit, onAspectChange }) {
     controls = useRef(null),
     gestures = useRef(null),
     view = useRef(new ReconciledView()),
+    screenTransitionRef = useRef(createScreenTransition()),
     menu = useRef(false);
   if (!gestures.current) gestures.current = createGestureHandlers(controls);
   const [session, setSession] = useState({ status: 'idle' }),
@@ -65,7 +82,14 @@ export function Online({ aspect, onExit, onAspectChange }) {
           .slice(0, 6) || '',
     ),
     [rendererError, setRendererError] = useState(''),
-    [settings, setSettings] = useState(false);
+    [settings, setSettings] = useState(false),
+    [screenTransition, setScreenTransition] = useState({
+      parent: 'game-world',
+      type: 'screen-door',
+      phase: 'idle',
+      progress: 1,
+      easedProgress: 1,
+    });
   useEffect(() => {
     let cancelled = false,
       renderer,
@@ -90,6 +114,18 @@ export function Online({ aspect, onExit, onAspectChange }) {
         id = c?.state.sessionId;
       const nextRound = view.current.state?.round,
         alive = view.current.state?.players.find((p) => p.id === id)?.alive === true;
+      const roundKey = view.current.state?.round ?? 'waiting';
+      screenTransitionRef.current.ensure(
+        roundKey,
+        view.current.state || createGame([]),
+        now / 1000,
+        {
+          onUpdate: setScreenTransition,
+          onMiddle: () => screenTransitionRef.current.continue(),
+        },
+      );
+      screenTransitionRef.current.tick(now / 1000);
+      const transitionBlocking = screenTransitionRef.current.isBlocking();
       if (nextRound !== inputRound) {
         input.clear();
         pendingBomb = false;
@@ -106,7 +142,8 @@ export function Online({ aspect, onExit, onAspectChange }) {
           inputEpoch = input.epoch;
           sendElapsed = 0.05;
         }
-        const active = c?.state.status === 'connected' && alive && !menu.current;
+        const active =
+          c?.state.status === 'connected' && alive && !menu.current && !transitionBlocking;
         const read = input.read();
         const command = active ? read : { x: 0, y: 0, bomb: false };
         if (!active) pendingBomb = false;
@@ -122,7 +159,8 @@ export function Online({ aspect, onExit, onAspectChange }) {
       }
       const drawn = view.current.draw(id, dt) || createGame([]);
       drawn.bombFlash = flash.current;
-      renderer.draw(drawn);
+      drawn.explosionStyle = explosion.current;
+      renderer.draw(screenTransitionRef.current.present(drawn));
       sound.audio.current?.observe(view.current.state);
       frame = requestAnimationFrame(loop);
     };
@@ -212,7 +250,7 @@ export function Online({ aspect, onExit, onAspectChange }) {
           '--arena-rows': g?.height ?? 13,
         }}
       >
-        <div className="arena-slot">
+        <div className="game-view arena-slot">
           <ArenaPlayers
             players={g?.people}
             canvas={canvas}
@@ -221,64 +259,67 @@ export function Online({ aspect, onExit, onAspectChange }) {
             mapWidth={g?.width}
             mapHeight={g?.height}
             localPlayerColor={me?.color}
+            transitionState={screenTransition}
           />
         </div>
         <section
-          className="game-panel online-game-panel"
+          className="menu-view game-panel online-menu-view online-game-panel"
           data-information-panel
           {...gestures.current.panel}
         >
-          <header className="panel-header">
+          <header className="panel-header menu-section menu-section-header">
             <header className="corner corner_top_left">
               <h1>Bomberman Clone</h1>
             </header>
-            <TopNav online aspect={aspect} onModeChange={onExit} onAspectChange={onAspectChange} />
+            <TopNav online onModeChange={onExit} />
           </header>
           <div className="panel-content">
-            {g && (
-              <div className="hud">
-                <span>
-                  ROOM {g.code} · ROUND {g.round}
-                </span>
-                <span>
-                  {g.phase === 'playing'
-                    ? `${Math.ceil(g.remaining)}s · ${waitingForRound ? 'WAITING' : actor?.alive ? 'ALIVE' : 'SPECTATING'}`
-                    : g.phase.toUpperCase()}
-                </span>
-              </div>
-            )}
-            {g && (
-              <div className="battle-status">
-                <div className="scoreboard">
-                  {g.people.map((p) => (
-                    <span key={p.id} className={`seat seat_${p.color}`}>
-                      {p.id === me?.id ? 'YOU' : COLORS[p.color]} {p.score}/3{' '}
-                      {p.cpu
-                        ? 'CPU '
-                        : !p.connected
-                          ? '↻'
-                          : g.players.find((a) => a.id === p.id)?.alive
-                            ? '●'
-                            : '○'}
-                    </span>
-                  ))}
+            <section className="menu-section menu-section-status">
+              {g && (
+                <div className="hud">
+                  <span>
+                    ROOM {g.code} · ROUND {g.round}
+                  </span>
+                  <span>
+                    {g.phase === 'playing'
+                      ? `${Math.ceil(g.remaining)}s · ${waitingForRound ? 'WAITING' : actor?.alive ? 'ALIVE' : 'SPECTATING'}`
+                      : g.phase.toUpperCase()}
+                  </span>
                 </div>
-                <span>
-                  {actor
-                    ? `BOMBS ${actor.capacity}/5 · RANGE ${actor.range}/8 · SPEED ${actor.speedLevel || 0}/3`
-                    : 'Next round: you join the arena'}
-                </span>
-              </div>
-            )}
-            <aside className="legend-rail">
+              )}
+              {g && (
+                <div className="battle-status">
+                  <div className="scoreboard">
+                    {g.people.map((p) => (
+                      <span key={p.id} className={`seat seat_${p.color}`}>
+                        {p.id === me?.id ? 'YOU' : COLORS[p.color]} {p.score}/3{' '}
+                        {p.cpu
+                          ? 'CPU '
+                          : !p.connected
+                            ? '↻'
+                            : g.players.find((a) => a.id === p.id)?.alive
+                              ? '●'
+                              : '○'}
+                      </span>
+                    ))}
+                  </div>
+                  <span>
+                    {actor
+                      ? `BOMBS ${actor.capacity}/5 · RANGE ${actor.range}/8 · SPEED ${actor.speedLevel || 0}/3`
+                      : 'Next round: you join the arena'}
+                  </span>
+                </div>
+              )}
+            </section>
+            <aside className="legend-rail menu-section menu-section-controls">
               <PowerupLegend />
             </aside>
-            <div className="instructions online-instructions">
+            <div className="instructions online-instructions menu-section menu-section-instructions">
               MOVE <kbd>WASD</kbd> / <kbd>↑↓←→</kbd> · BOMB <kbd>SPACE</kbd>
               <span>Place. Escape. Outlast.</span>
             </div>
           </div>
-          <footer className="panel-footer">
+          <footer className="panel-footer menu-section menu-section-footer">
             <section className="corner corner_bottom_left">
               <button onClick={toggleSettings}>⚙ Settings</button>
             </section>
@@ -300,76 +341,151 @@ export function Online({ aspect, onExit, onAspectChange }) {
               <p role="status">
                 {session.error || 'Create a private room or enter your friend’s code.'}
               </p>
-              <label>
-                Room code{' '}
-                <input
-                  aria-label="Room code"
-                  value={code}
-                  maxLength={6}
-                  onChange={(e) => setCode(e.target.value.toUpperCase().replace(/[^A-Z0-9]/g, ''))}
-                />
-              </label>
-              <button disabled={code.length !== 6} onClick={() => connect({ code })}>
-                Join room
-              </button>
-              <button
-                onClick={() => connect({ create: true, ...(code.length === 6 ? { code } : {}) })}
-              >
-                Create room
-              </button>
+              <div className="room-actions">
+                <section className="room-action">
+                  <div className="room-action-content">
+                    <h3>Create room</h3>
+                    <p>Start a private battle and share the room code with your friends.</p>
+                  </div>
+                  <button
+                    onClick={() =>
+                      connect({ create: true, ...(code.length === 6 ? { code } : {}) })
+                    }
+                  >
+                    Create room
+                  </button>
+                </section>
+                <section className="room-action">
+                  <div className="room-action-content">
+                    <h3>Join room</h3>
+                    <label>
+                      Room code
+                      <input
+                        aria-label="Room code"
+                        value={code}
+                        maxLength={6}
+                        onChange={(e) =>
+                          setCode(e.target.value.toUpperCase().replace(/[^A-Z0-9]/g, ''))
+                        }
+                      />
+                    </label>
+                  </div>
+                  <button disabled={code.length !== 6} onClick={() => connect({ code })}>
+                    Join room
+                  </button>
+                </section>
+              </div>
               {session.status === 'reconnecting' && session.sessionId && g && (
                 <p>Your character remains vulnerable during recovery.</p>
               )}
             </div>
           )}
           {!rendererError && session.status === 'connected' && g?.phase === 'lobby' && (
-            <div className="overlay">
-              <h2>Room {g.code}</h2>
-              <p>Four fighters: humans fill CPU seats. Every human readies up.</p>
-              <BattleOptions
-                options={
-                  g.options || { cpu: 'MED', map: 'LOW', plant: false, chainReaction: false }
-                }
-                showChainReaction={Object.hasOwn(g.options || {}, 'chainReaction')}
-                disabled={g.hostId !== session.sessionId}
-                onChange={(patch) => {
-                  saveBattleOptions({ ...loadBattleOptions(), ...g.options, ...patch });
-                  client.current?.send('options', patch);
-                }}
-                bombFlash={bombFlash}
-                onBombFlash={changeFlash}
-              />
-              <p>Five-minute host limit. If the room expires, create a new room.</p>
-              <p>
-                <button onClick={share}>Copy room link</button>
-              </p>
-              <p className="share-message" role="status">
-                {shareMessage}
-              </p>
-              <ul>
-                {g.people.map((p) => (
-                  <li key={p.id}>
-                    {p.name} · {COLORS[p.color]} ·{' '}
-                    {p.cpu ? 'CPU' : p.connected ? (p.ready ? 'Ready' : 'Waiting') : 'Reconnecting'}{' '}
-                    · {p.score} wins
-                  </li>
-                ))}
-              </ul>
-              <div>
-                {COLORS.map((color, n) => (
-                  <button
-                    key={color}
-                    disabled={g.people.some((p) => p.id !== me?.id && !p.cpu && p.color === n)}
-                    aria-pressed={me?.color === n}
-                    onClick={() => client.current?.send('color', n)}
-                  >
-                    {color}
-                  </button>
-                ))}
+            <div className="overlay lobby-overlay">
+              <div className="lobby-card">
+                <div className="lobby-heading">
+                  <div>
+                    <span className="lobby-kicker">PRIVATE ROOM</span>
+                    <h2>Room {g.code}</h2>
+                  </div>
+                  <span className="lobby-phase">LOBBY</span>
+                </div>
+                <p className="lobby-intro">Four fighters. Every human readies up.</p>
+
+                <section className="lobby-section lobby-rules">
+                  <div className="lobby-section-heading">
+                    <h3>Battle rules</h3>
+                    <span>
+                      {g.hostId === session.sessionId ? 'HOST CONTROLS' : 'HOST SETS RULES'}
+                    </span>
+                  </div>
+                  <BattleOptions
+                    options={
+                      g.options || { cpu: 'MED', map: 'LOW', plant: false, chainReaction: false }
+                    }
+                    showChainReaction={Object.hasOwn(g.options || {}, 'chainReaction')}
+                    disabled={g.hostId !== session.sessionId}
+                    mode="online"
+                    onModeChange={onExit}
+                    onChange={(patch) => {
+                      saveBattleOptions({ ...loadBattleOptions(), ...g.options, ...patch });
+                      client.current?.send('options', patch);
+                    }}
+                    bombFlash={bombFlash}
+                    onBombFlash={changeFlash}
+                    explosionStyle={explosionStyle}
+                    onExplosionStyle={changeExplosionStyle}
+                  />
+                </section>
+
+                <section className="lobby-section lobby-share">
+                  <div>
+                    <h3>Invite your fighters</h3>
+                    <p>Share the room link before the five-minute host limit expires.</p>
+                  </div>
+                  <button onClick={share}>Copy room link</button>
+                  <span className="share-message" role="status">
+                    {shareMessage}
+                  </span>
+                </section>
+
+                <section className="lobby-section lobby-players">
+                  <div className="lobby-section-heading">
+                    <h3>Fighters</h3>
+                    <span>{g.people.length}/4 SEATS</span>
+                  </div>
+                  <ul>
+                    {g.people.map((p) => (
+                      <li key={p.id} className={`lobby-player lobby-player-${p.color}`}>
+                        <span className="lobby-player-name">
+                          <i aria-hidden="true" />
+                          {p.id === me?.id ? 'YOU' : p.name}
+                        </span>
+                        <span>{COLORS[p.color]}</span>
+                        <span>
+                          {p.cpu
+                            ? 'CPU'
+                            : p.connected
+                              ? p.ready
+                                ? 'READY'
+                                : 'WAITING'
+                              : 'RECONNECTING'}{' '}
+                          · {p.score} WINS
+                        </span>
+                      </li>
+                    ))}
+                  </ul>
+                </section>
+
+                <div className="lobby-ready-row">
+                  <div className="lobby-colors" aria-label="Choose fighter color">
+                    <span>YOUR COLOR</span>
+                    <div>
+                      {COLORS.map((color, n) => (
+                        <button
+                          key={color}
+                          disabled={g.people.some(
+                            (p) => p.id !== me?.id && !p.cpu && p.color === n,
+                          )}
+                          aria-pressed={me?.color === n}
+                          onClick={() => client.current?.send('color', n)}
+                        >
+                          {color}
+                        </button>
+                      ))}
+                    </div>
+                  </div>
+                  <div className="lobby-start-group">
+                    <span>START GAME</span>
+                    <button
+                      className="lobby-ready-button"
+                      onClick={() => client.current?.send('ready')}
+                    >
+                      {me?.ready ? 'Cancel ready' : 'Ready up'}
+                    </button>
+                  </div>
+                </div>
               </div>
-              <button onClick={() => client.current?.send('ready')}>
-                {me?.ready ? 'Cancel ready' : 'Ready up'}
-              </button>
             </div>
           )}
           {session.status === 'connected' && waitingForRound && !rendererError && (
@@ -427,16 +543,27 @@ export function Online({ aspect, onExit, onAspectChange }) {
             <div className="overlay settings-overlay">
               <div className="settings-content">
                 <h2>Settings</h2>
-                <p>The online battle continues while this menu is open.</p>
                 <AudioSettings sound={sound} />
-                <button onClick={clearSettings}>Clear Local Storage</button>
-                {clearMessage && <p role="status">{clearMessage}</p>}
-                <button onClick={toggleSettings}>Resume</button>
                 <button
-                  onClick={() => document.documentElement.requestFullscreen()?.catch(() => {})}
+                  className="settings-toggle-button"
+                  type="button"
+                  aria-pressed={aspect === 'portrait'}
+                  onClick={onAspectChange}
+                >
+                  Aspect: {aspect === 'landscape' ? 'Landscape' : 'Portrait'}
+                </button>
+                <button
+                  onClick={() => {
+                    const operation = document.fullscreenElement
+                      ? document.exitFullscreen()
+                      : document.documentElement.requestFullscreen();
+                    operation?.catch(() => {});
+                  }}
                 >
                   Fullscreen
                 </button>
+                <button onClick={clearSettings}>Clear Local Storage</button>
+                {clearMessage && <p role="status">{clearMessage}</p>}
                 {invite && (
                   <>
                     <p>
@@ -447,6 +574,9 @@ export function Online({ aspect, onExit, onAspectChange }) {
                     </p>
                   </>
                 )}
+                <button className="settings-back-button" onClick={toggleSettings}>
+                  Back
+                </button>
               </div>
             </div>
           )}

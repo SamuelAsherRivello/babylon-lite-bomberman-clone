@@ -91,6 +91,9 @@ testing. Human players may enable sound in the normal experience.
   longer used.
 - When changing React UI, check that its JSX class names and IDs match the
   styles, and remove obsolete selectors left behind by the change.
+- Put new battle-option toggles in the shared `toggle-button-container` toggle
+  section. Keep the toggle layout at two buttons per row and two rows before
+  adding another row or moving a toggle into Settings.
 - The page structure supports keeping the full HUD visible inside the viewport
   during fullscreen. Gutters are not visible in fullscreen, so custom gutter UI
   may be added only as secondary UI. Keep all primary UI in React and within

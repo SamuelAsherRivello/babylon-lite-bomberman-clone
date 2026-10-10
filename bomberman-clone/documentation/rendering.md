@@ -3,8 +3,23 @@
 Babylon Lite 1.32.0 native SpriteRenderer renders the arena with WebGPU only.
 Original code-authored 16×16 pixel textures live in src/content/art.js;
 src/content/renderer.js maps its 64-frame atlas to native WebGPU sprites.
+Renderer-owned runtime helpers live under `src/content/systems/`; the particle
+profile/lifecycle module is `particle-effects-system.js` and the particle atlas
+builder is `particle-effects-art.js`. `animation-system.js` is reserved for
+shared presentation animation primitives.
 The temporary authoring canvas produces the PNG atlas; it is not a fallback
 game renderer.
+
+The battle options include a client-local `Explosion: Classic` / `Explosion:
+PFX` toggle in the `toggle-button-container` row. Classic is the default and keeps the existing bomb and blast
+sprites. PFX loads the approved transparent `SmokePoff` and `FirePlume` frame
+sequences from `public/assets/pfx/` into a nearest-sampled particle atlas and
+dedicated Babylon Lite sprite layer. During the existing 2.5-second fuse, no
+PFX smoke is shown. When authoritative blast cells appear, each cell plays one
+`FirePlume` animation followed by a `SmokePoff` burst, with the puff starting
+on FirePlume frame 4. The particles are cosmetic and never
+determine blast timing, damage, or collision; see
+particle-assets.md for source provenance and redistribution status.
 
 ## Resolution and layout
 
@@ -48,6 +63,19 @@ names and seat ownership.
 Practice and online settings cover the full information panel and center their
 controls inside it. On a short mobile viewport, the settings controls scroll
 within that panel so the close action remains reachable.
+
+Each initial level, practice restart, and online round starts with a
+game-world `screen-transition` of type `screen-door`. Two grey panels, each
+half the game-world square, slide inward for 0.5 seconds, hold closed for 0.2
+seconds, and slide outward for 0.5 seconds. The shared animation system eases
+the close with deceleration and reverses that curve for the open: slow at first,
+then quickly accelerating before the final movement plateaus. The panels use
+the supplied `public/assets/door-half.png` artwork; the right panel mirrors it
+horizontally. The renderer keeps the previous arena presentation until the
+doors meet, swaps to the new level graphics while they are closed, and then
+reveals the new level. The screen-transition layer sits above the canvas and
+corner player labels but is clipped to the arena stage, so the adjacent
+menu/HUD panel and outer gutters remain visible.
 
 The information panel header places the game title and Mode, Aspect, and GitHub
 controls on one row in both modes. Narrow panels show shorter control labels
